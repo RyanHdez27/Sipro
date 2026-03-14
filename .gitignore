@@ -1,0 +1,14 @@
+# Root level ignores
+.vscode/
+.idea/
+
+# Ignore local compressed backups
+*.zip
+*.rar
+*.tar.gz
+
+# Env files
+.env
+
+# MacOS
+.DS_Store
