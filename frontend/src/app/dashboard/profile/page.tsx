@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [wantsNewsletter, setWantsNewsletter] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -26,6 +28,8 @@ export default function ProfilePage() {
       if (!token) {
           setName("Usuario Pruebas");
           setEmail("pruebas@sipro.edu.co");
+          setPhone("+57 300 123 4567");
+          setAvatarUrl("https://api.dicebear.com/7.x/notionists/svg?seed=Felix");
           setWantsNewsletter(true);
           setLoading(false);
           return;
@@ -39,6 +43,8 @@ export default function ProfilePage() {
           const data = await res.json();
           setName(data.name);
           setEmail(data.email);
+          setPhone(data.phone || "");
+          setAvatarUrl(data.avatar_url || "");
           setWantsNewsletter(data.wants_newsletter);
         } else {
             console.error("Failed to fetch profile");
@@ -66,7 +72,12 @@ export default function ProfilePage() {
     }
 
     try {
-      const payload: any = { name, wants_newsletter: wantsNewsletter };
+      const payload: any = { 
+        name, 
+        wants_newsletter: wantsNewsletter,
+        phone,
+        avatar_url: avatarUrl 
+      };
       if (password) payload.password = password;
 
       const res = await fetch("http://localhost:8000/users/me", {
@@ -123,6 +134,16 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre Completo</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Número de Teléfono</Label>
+                  <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+57 300..." />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="avatarUrl">URL de Imagen de Perfil</Label>
+                  <Input id="avatarUrl" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://ejemplo.com/mifoto.jpg" />
                 </div>
 
                 <div className="space-y-2">

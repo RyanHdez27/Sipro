@@ -14,13 +14,14 @@ import {
 interface UserProfile {
   name: string;
   email: string;
+  avatar_url?: string;
 }
 
 export function UserNav() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   
-  // Extract initial letters for avatar
+  // Extract initial letters for avatar fallback
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2)
     : "U";
@@ -30,7 +31,7 @@ export function UserNav() {
       // DEV BYPASS: Load mock user data if no token
       const token = localStorage.getItem("token");
       if (!token) {
-        setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co" });
+        setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co", avatar_url: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" });
         return;
       }
 
@@ -44,11 +45,11 @@ export function UserNav() {
           const data = await res.json();
           setUser(data);
         } else {
-             setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co" });
+             setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co", avatar_url: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" });
         }
       } catch (error) {
         console.error("Failed to fetch user data for nav");
-        setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co" });
+        setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co", avatar_url: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" });
       }
     };
 
@@ -68,8 +69,12 @@ export function UserNav() {
             <p className="text-sm font-medium text-gray-900">{user?.name || "Cargando..."}</p>
             <p className="text-xs text-gray-500">Estudiante</p>
           </div>
-          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-            {initials}
+          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden shadow-sm border border-border">
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
         </button>
       </DropdownMenuTrigger>
@@ -86,7 +91,7 @@ export function UserNav() {
         <DropdownMenuItem onClick={() => router.push("/dashboard/profile")} className="cursor-pointer">
           Mi Perfil
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="cursor-pointer">
           Configuración
         </DropdownMenuItem>
         <DropdownMenuSeparator />
