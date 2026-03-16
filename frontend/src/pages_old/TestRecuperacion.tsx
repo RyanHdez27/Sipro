@@ -80,7 +80,7 @@ const preguntasAdaptativas = [
 ];
 
 export function TestRecuperacion() {
-  const navigate = useRouter();
+  const router = useRouter();
   const [preguntaActual, setPreguntaActual] = useState(0);
   const [respuestas, setRespuestas] = useState<Record<number, string>>({});
   const [mostrarExplicacion, setMostrarExplicacion] = useState(false);
@@ -192,7 +192,7 @@ export function TestRecuperacion() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/dashboard')}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
               size="lg"
             >
@@ -200,7 +200,7 @@ export function TestRecuperacion() {
               Volver al Dashboard
             </Button>
             <Button
-              onClick={() => router.push('/tutor-ia')}
+              onClick={() => router.push('/dashboard/tutor-ia')}
               className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
               size="lg"
             >
@@ -254,7 +254,7 @@ export function TestRecuperacion() {
               </div>
             </div>
             <Button 
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/dashboard')}
               variant="outline"
               className="border-gray-300"
             >

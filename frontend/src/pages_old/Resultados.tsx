@@ -46,7 +46,7 @@ const preguntasIncorrectas = [
 ];
 
 export function Resultados() {
-  const navigate = useRouter();
+  const router = useRouter();
 
   const puntajeTotal = 245;
   const puntajeMaximo = 300;
@@ -76,7 +76,7 @@ export function Resultados() {
               </div>
             </div>
             <Button 
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/dashboard')}
               variant="outline"
               className="border-gray-300"
             >
@@ -291,7 +291,7 @@ export function Resultados() {
                 </div>
 
                 <Button 
-                  onClick={() => router.push('/tutor-ia')}
+                  onClick={() => router.push('/dashboard/tutor-ia')}
                   className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
@@ -319,7 +319,7 @@ export function Resultados() {
                   Genera un test personalizado con preguntas enfocadas en estas áreas.
                 </p>
                 <Button 
-                  onClick={() => router.push('/test-recuperacion')}
+                  onClick={() => router.push('/dashboard/test-recuperacion')}
                   className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
                 >
                   <Brain className="w-4 h-4 mr-2" />
@@ -355,7 +355,7 @@ export function Resultados() {
 
             {/* Nueva Prueba */}
             <Button 
-              onClick={() => router.push('/prueba-simulada')}
+              onClick={() => router.push('/dashboard/prueba-simulada')}
               variant="outline"
               className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
             >

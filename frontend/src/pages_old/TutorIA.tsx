@@ -31,7 +31,7 @@ const mensajesIniciales: Mensaje[] = [
 ];
 
 export function TutorIA() {
-  const navigate = useRouter();
+  const router = useRouter();
   const [mensajes, setMensajes] = useState<Mensaje[]>(mensajesIniciales);
   const [inputMensaje, setInputMensaje] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -124,7 +124,7 @@ export function TutorIA() {
               </div>
             </div>
             <Button 
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/dashboard')}
               variant="outline"
               className="border-gray-300"
             >
@@ -243,7 +243,7 @@ export function TutorIA() {
           {/* Action Button */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Button
-              onClick={() => router.push('/test-recuperacion')}
+              onClick={() => router.push('/dashboard/test-recuperacion')}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
               size="lg"
             >
@@ -251,7 +251,7 @@ export function TutorIA() {
               Generar Test de Recuperación
             </Button>
             <Button
-              onClick={() => router.push('/resultados')}
+              onClick={() => router.push('/dashboard/resultados')}
               variant="outline"
               className="border-gray-300"
               size="lg"

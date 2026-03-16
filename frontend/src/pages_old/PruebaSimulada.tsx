@@ -77,7 +77,7 @@ const preguntas = [
 ];
 
 export function PruebaSimulada() {
-  const navigate = useRouter();
+  const router = useRouter();
   const [preguntaActual, setPreguntaActual] = useState(0);
   const [respuestas, setRespuestas] = useState<Record<number, string>>({});
   const [tiempoRestante, setTiempoRestante] = useState(120); // 120 minutos
@@ -97,7 +97,7 @@ export function PruebaSimulada() {
       setPreguntaActual(preguntaActual + 1);
     } else {
       // Finalizar prueba
-      router.push('/resultados');
+      router.push('/dashboard/resultados');
     }
   };
 
@@ -286,7 +286,7 @@ export function PruebaSimulada() {
 
             {/* Finalizar */}
             <Button
-              onClick={() => router.push('/resultados')}
+              onClick={() => router.push('/dashboard/resultados')}
               variant="outline"
               className="w-full border-red-300 text-red-600 hover:bg-red-50"
             >

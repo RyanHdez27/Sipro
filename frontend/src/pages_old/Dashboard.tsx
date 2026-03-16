@@ -33,7 +33,7 @@ const historialPruebas = [
 ];
 
 export function Dashboard() {
-  const navigate = useRouter();
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -196,7 +196,7 @@ export function Dashboard() {
                   <BookOpen className="w-16 h-16 text-blue-500 opacity-20" />
                 </div>
                 <Button 
-                  onClick={() => router.push('/prueba-simulada')}
+                  onClick={() => router.push('/dashboard/prueba-simulada')}
                   className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white w-full"
                   size="lg"
                 >
@@ -226,7 +226,7 @@ export function Dashboard() {
                     <div 
                       key={prueba.id}
                       className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer border border-gray-200"
-                      onClick={() => router.push('/resultados')}
+                      onClick={() => router.push('/dashboard/resultados')}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-xs text-gray-500">{prueba.fecha}</span>
@@ -261,7 +261,7 @@ export function Dashboard() {
                   Conversa con tu tutor virtual para resolver dudas, recibir explicaciones y generar ejercicios personalizados.
                 </p>
                 <Button 
-                  onClick={() => router.push('/tutor-ia')}
+                  onClick={() => router.push('/dashboard/tutor-ia')}
                   className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white w-full"
                 >
                   Abrir Chat con Tutor IA
