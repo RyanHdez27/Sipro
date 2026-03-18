@@ -1,6 +1,6 @@
 # SIPRO UDC - Arquitectura MVP
 
-Este repositorio contiene la arquitectura MVP Full-Stack para el proyecto SIPRO UDC, migrando de una exportación estática de Figma Vite a un Monorepo listo para producción.
+Sistema Integral de Preparación para el Saber Pro - UDC. Aplicación Full-Stack para el aprendizaje adaptativo con Tutor de IA.
 
 ## Estructura del Proyecto
 
@@ -8,66 +8,109 @@ Este repositorio contiene la arquitectura MVP Full-Stack para el proyecto SIPRO 
 /
 ├── /backend            # Aplicación Python FastAPI
 │   ├── app/            # Código fuente (routers, modelos, esquemas)
-│   ├── .env            # Configuración de Entorno
+│   ├── venv/           # Entorno virtual Python (generado localmente)
+│   ├── .env            # Configuración de Entorno (DATABASE_URL, SECRET_KEY, etc.)
+│   ├── migrate.py      # Script para migraciones de columnas en BD
 │   └── requirements.txt
 ├── /frontend           # Aplicación Web Next.js 14
-│   ├── src/app/        # Endpoints del App Router de Next.js (Auth, Dashboard, etc)
-│   ├── src/components/ # Componentes de Interfaz Compartidos & Rutas Protegidas
-│   └── src/pages_old/  # Vistas Legacy de Figma enrutadas a Next.js
-├── README.md           # Instrucciones de Instalación
+│   ├── src/app/        # Endpoints del App Router (Auth, Dashboard, Perfil, etc.)
+│   ├── src/components/ # Componentes Compartidos (UserNav, ProtectedRoute)
+│   ├── src/lib/        # Librería cliente API (api.ts)
+│   ├── src/pages_old/  # Vistas legacy de Figma enrutadas a Next.js
+│   └── .env.local      # Variables de entorno del frontend (NEXT_PUBLIC_API_URL)
+└── README.md
 ```
 
-## 1. Configuración de Base de Datos
-1. Instala PostgreSQL y realiza la configuración local.
-2. Crea una base de datos llamada `sipro_db`.
-3. Las tablas de la base de datos se crean automáticamente en la primera ejecución de FastAPI. *(Actualmente usando SQLite `sipro_db.db` por defecto si PostgreSQL no está activo, para pruebas locales fluidas)*.
+## 1. Base de Datos (Supabase PostgreSQL)
+
+El proyecto utiliza **PostgreSQL alojado en Supabase**. La conexión se configura directamente en el archivo `.env` del backend.
+
+1. Abre el archivo `backend/.env` y actualiza la variable `DATABASE_URL` con tu cadena de conexión de Supabase:
+   ```env
+   DATABASE_URL=postgresql+psycopg://usuario:contraseña@host:5432/postgres
+   SECRET_KEY=tu_clave_secreta_larga_aqui
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   ```
+2. Las tablas (`users`) se crean automáticamente al iniciar el servidor por primera vez.
+3. Si agregas nuevas columnas al modelo, ejecuta la migración:
+   ```bash
+   .\venv\Scripts\python migrate.py
+   ```
 
 ## 2. Configuración del Backend (FastAPI)
 
-1. Navega a la carpeta backend:
-   ```bash
-   cd backend
-   ```
-2. Crea un entorno virtual (Python 3.12+):
-   ```bash
-   python -m venv venv
-   ```
-   * Activar (Windows): `venv\Scripts\activate`
-   * Activar (Mac/Linux): `source venv/bin/activate`
-3. Instala las dependencias:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Inicia el servidor:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-   > La API estará disponible en http://localhost:8000
-   > Puedes ver la documentación automática de endpoints en http://localhost:8000/docs
+**Requisito:** Python 3.11 o 3.12 (preferido). Python 3.13 puede generar conflictos con SQLAlchemy antiguo.
+
+```bash
+cd backend
+
+# 1. Crear entorno virtual (solo la primera vez)
+python -m venv venv
+
+# 2. Activar el entorno virtual
+.\venv\Scripts\activate          # Windows PowerShell
+# source venv/bin/activate       # Mac / Linux
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+
+# 4. Iniciar el servidor
+.\venv\Scripts\uvicorn app.main:app --reload
+```
+
+> La API estará disponible en **http://localhost:8000**  
+> Documentación interactiva (Swagger UI): **http://localhost:8000/docs**
+
+> ⚠️ **Importante:** Siempre inicia el servidor usando `.\venv\Scripts\uvicorn` (no el `uvicorn` global del sistema) para evitar conflictos de versiones de librerías.
 
 ## 3. Configuración del Frontend (Next.js 14)
 
-1. Navega a la carpeta frontend:
-   ```bash
-   cd frontend
-   ```
-2. Instala las dependencias (mapeadas desde Tailwind v4 & Vite UI):
-   ```bash
-   npm install
-   ```
-3. Ejecuta el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
-   > La aplicación web estará disponible en http://localhost:3000
-   > La ruta base `/` redirige automáticamente al `/dashboard` Protegido, requiriendo inicio de sesión.
+```bash
+cd frontend
 
-## Flujos de Autenticación y Perfil
+# 1. Instalar dependencias
+npm install
 
-- **Iniciar Sesión**: Manejado de forma segura vía POST `/auth/login` retornando un Token JWT verificable.
-- **Registro y Boletín**: Almacena contraseñas hasheadas usando Bcrypt vía POST `/auth/register`. Incluye registro de preferencia para correos promocionales.
-- **Rutas Protegidas**: Manejadas mediante un componente envoltorio en el Cliente Next.js verificando tokens de `localStorage`.
-- **Menú de Perfil (`/dashboard/profile`)**: Menú desplegable dinámico para editar nombre, contraseña y preferencias.
-- **Modo de Pruebas (Bypass Dev)**: Las rutas `/dashboard` y `/dashboard/profile` están temporalmente habilitadas para acceso directo sin inicio de sesión con datos simulados (mock data) para facilitar la prueba de componentes UI.
+# 2. Configurar variables de entorno (ya incluidas en .env.local)
+# NEXT_PUBLIC_API_URL=http://localhost:8000
 
-*Nota: Las interfaces Typescript autogeneradas por Figma tienen sus revisiones estrictas deshabilitadas en la construcción de Next.js mediante `next.config.mjs` para asegurar iteraciones rápidas manteniendo el soporte estándar del App Router.*
+# 3. Iniciar el servidor de desarrollo
+npm run dev
+```
+
+> La aplicación estará disponible en **http://localhost:3000**  
+> La ruta `/` redirige automáticamente al `/dashboard`. Sin sesión iniciada, te enviará a `/auth/login`.
+
+## 4. Flujos Implementados
+
+### Autenticación
+- **Registro** (`/auth/register`): Crea una cuenta con nombre, email, contraseña y preferencia de newsletter. Contraseña almacenada con hash Bcrypt.
+- **Login** (`/auth/login`): Devuelve un token JWT guardado en `localStorage`.
+- **Rutas Protegidas**: El componente `ProtectedRoute` verifica el JWT. Sin token válido, redirige a `/auth/login`.
+
+### Módulos de la Aplicación
+| Ruta | Descripción |
+|------|-------------|
+| `/dashboard` | Panel principal con accesos a todas las funciones |
+| `/dashboard/profile` | Perfil del usuario — editar nombre, teléfono, avatar |
+| `/dashboard/settings` | Configuración — notificaciones, privacidad, apariencia |
+| `/dashboard/prueba-simulada` | Prueba simulada tipo Saber Pro con cronómetro |
+| `/dashboard/resultados` | Resultados detallados de las pruebas realizadas |
+| `/dashboard/tutor-ia` | Chat con Tutor de IA personalizado |
+| `/dashboard/test-recuperacion` | Test adaptativo generado según áreas débiles |
+
+### API Endpoints Backend
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/auth/register` | Registro de usuario |
+| POST | `/auth/login` | Login — retorna JWT |
+| GET | `/users/me` | Obtener datos del usuario autenticado |
+| PUT | `/users/me` | Actualizar perfil (nombre, teléfono, avatar, contraseña) |
+| GET | `/health` | Estado del servidor |
+
+## 5. Notas Técnicas
+
+- Las interfaces TypeScript generadas por Figma tienen revisiones estrictas deshabilitadas en `next.config.mjs` para acelerar iteraciones.
+- Los componentes legacy en `src/pages_old/` se importan como componentes React estándar dentro de páginas del App Router (`app/dashboard/*/page.tsx`).
+- La librería `src/lib/api.ts` centraliza todas las llamadas al backend con manejo de errores y cabeceras de autenticación.

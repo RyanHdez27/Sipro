@@ -28,33 +28,31 @@ export function UserNav() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      // DEV BYPASS: Load mock user data if no token
       const token = localStorage.getItem("token");
       if (!token) {
-        setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co", avatar_url: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" });
+        router.push("/auth/login");
         return;
       }
 
       try {
-        const res = await fetch("http://localhost:8000/users/me", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
           setUser(data);
         } else {
-             setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co", avatar_url: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" });
+          // Token invalid or expired
+          localStorage.removeItem("token");
+          router.push("/auth/login");
         }
       } catch (error) {
         console.error("Failed to fetch user data for nav");
-        setUser({ name: "Usuario Pruebas", email: "pruebas@sipro.edu.co", avatar_url: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" });
       }
     };
 
     fetchUser();
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

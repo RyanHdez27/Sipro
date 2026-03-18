@@ -7,8 +7,12 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    // DEV BYPASS: Autiorizacion de ingreso a dashboard sin logueo
-    setAuthorized(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/auth/login");
+    } else {
+      setAuthorized(true);
+    }
   }, [router]);
 
   if (!authorized) {

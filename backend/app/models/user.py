@@ -10,3 +10,5 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     wants_newsletter = Column(Boolean, default=False)
+    phone = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
