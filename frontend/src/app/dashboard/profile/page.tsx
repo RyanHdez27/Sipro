@@ -18,7 +18,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import {
-  User, Lock, Settings, Bell, Shield, Save, Camera, ArrowLeft, Target, TrendingUp, Award,
+  User, Lock, Settings, Bell, Shield, Save, Camera, Home, Target, TrendingUp, Award,
   CheckCircle2, AlertCircle, Trophy, Flame, Zap, BookOpen, Clock, BarChart3, GraduationCap,
   Globe, Calendar, Activity, Star
 } from "lucide-react";
@@ -92,24 +92,23 @@ function ConfiguracionEstudiante() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 shadow-sm">
+      <div data-tour="config-header" className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft className="h-5 w-5" /></Button>
               <div>
                 <h1 className="font-bold text-2xl">Configuración y Perfil</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Personaliza tu experiencia de aprendizaje</p>
               </div>
             </div>
-            <Button variant="outline" onClick={() => router.push("/dashboard")} className="dark:border-gray-700">Volver al Dashboard</Button>
+            <Button data-tour="config-home" variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="w-10 h-10 hover:bg-slate-100 dark:hover:bg-slate-800" title="Volver al inicio"><Home className="h-6 w-6" /></Button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Banners motivacionales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div data-tour="config-motivation" className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <div className="p-4 rounded-lg border-2 flex items-center gap-3" style={{ backgroundColor: `${motivacion.color}15`, borderColor: `${motivacion.color}40` }}>
             <motivacion.Icon className="h-6 w-6 flex-shrink-0" style={{ color: motivacion.color }} />
             <p className="font-semibold" style={{ color: motivacion.color }}>{motivacion.texto}</p>
@@ -123,7 +122,7 @@ function ConfiguracionEstudiante() {
         </div>
 
         <Tabs defaultValue="perfil" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[600px] dark:bg-slate-800">
+          <TabsList data-tour="config-tabs" className="grid w-full grid-cols-4 lg:w-[600px] dark:bg-slate-800">
             <TabsTrigger value="perfil"><User className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Perfil</span></TabsTrigger>
             <TabsTrigger value="academico"><Target className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Académico</span></TabsTrigger>
             <TabsTrigger value="progreso"><BarChart3 className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Progreso</span></TabsTrigger>
@@ -131,7 +130,7 @@ function ConfiguracionEstudiante() {
           </TabsList>
 
           {/* ─── PERFIL ─── */}
-          <TabsContent value="perfil">
+          <TabsContent data-tour="config-content" value="perfil">
             <Card className="border-0 shadow-sm dark:bg-slate-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-blue-700" />Perfil del Estudiante</CardTitle>

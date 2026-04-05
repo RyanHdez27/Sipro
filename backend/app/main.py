@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routers import auth, users
+from app.api.routers import auth, users, admin
 from app.core.config import settings
 from app.db.database import engine, Base
 
@@ -47,6 +47,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(admin.router)
 
 
 @app.middleware("http")

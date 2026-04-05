@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.models.user import User, UserRole, TeacherCode
+from app.models.user import User, UserRole, TeacherCode, LoginLog
 from app.schemas.auth import PasswordResetRequest
 from app.schemas.user import UserCreate, TeacherCreate, UserResponse
 from app.schemas.token import Token
@@ -32,17 +32,16 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/register/teacher", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_teacher(user_in: TeacherCreate, db: Session = Depends(get_db)):
-    # 1. Validar correo
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     
-    # 2. Validar teacher code y consumirlo en la misma transacción
     code_record = db.query(TeacherCode).filter(TeacherCode.code == user_in.teacher_code, TeacherCode.is_used == False).first()
     if not code_record:
         raise HTTPException(status_code=400, detail="Código de validación de profesor inválido o ya usado")
     
     code_record.is_used = True
+    code_record.used_by_name = user_in.name
     
     hashed_password = get_password_hash(user_in.password)
     new_user = User(
@@ -58,16 +57,33 @@ def register_teacher(user_in: TeacherCreate, db: Session = Depends(get_db)):
     return new_user
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Las credenciales invalidas deben responder 401 para que el cliente lo trate como fallo de autenticacion.
+    ip = request.client.host if request.client else "unknown"
+    ua = request.headers.get("user-agent", "unknown")
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # Log failed attempt
+        db.add(LoginLog(
+            user_email=form_data.username,
+            action="Intento de inicio de sesión fallido",
+            ip=ip, user_agent=ua, success=False,
+        ))
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    # Codificar también el scope/rol en el payload
+
+    # Log successful login
+    db.add(LoginLog(
+        user_email=user.email,
+        action="Inicio de sesión exitoso",
+        ip=ip, user_agent=ua, success=True,
+    ))
+    db.commit()
+
     access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer"}
     

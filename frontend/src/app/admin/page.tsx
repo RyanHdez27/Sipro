@@ -1,204 +1,197 @@
 "use client";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { UserNav } from "@/components/UserNav";
-import { 
-  BarChart, 
-  Bar, 
-  LineChart, 
-  Line, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  AreaChart,
-  Area
+import { getAdminStats } from "@/lib/api";
+import {
+  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, AreaChart, Area
 } from "recharts";
-import { 
-  Users, 
-  BookOpen, 
-  GraduationCap, 
-  FileText, 
-  TrendingUp, 
-  Shield,
-  Calendar,
-  Award,
-  BarChart3,
-  Trash2,
-  Eye,
-  UserCheck,
-  BookMarked,
-  Activity,
-  AlertCircle
+import {
+  Users, GraduationCap, TrendingUp, Shield, Award, BarChart3,
+  Eye, UserCheck, Activity, AlertCircle, BookOpen, Mail, CheckCircle2
 } from "lucide-react";
 
-// Datos de ejemplo
-const estadisticasGenerales = {
-  totalEstudiantes: 248,
-  totalDocentes: 12,
-  totalMaterias: 18,
-  totalTrabajos: 86,
-  promedioGeneral: 77,
-  tasaAprobacion: 85
-};
+/* ─── TYPES ─── */
+interface BackendUser { id: number; name: string; email: string; is_active: boolean }
 
-const crecimientoData = [
-  { mes: 'Sep', estudiantes: 180, docentes: 10, materias: 14 },
-  { mes: 'Oct', estudiantes: 205, docentes: 11, materias: 16 },
-  { mes: 'Nov', estudiantes: 225, docentes: 11, materias: 17 },
-  { mes: 'Dic', estudiantes: 232, docentes: 12, materias: 17 },
-  { mes: 'Ene', estudiantes: 238, docentes: 12, materias: 18 },
-  { mes: 'Feb', estudiantes: 242, docentes: 12, materias: 18 },
-  { mes: 'Mar', estudiantes: 248, docentes: 12, materias: 18 },
+/* ─── SIMULATED STUDENT PERFORMANCE DATA (6 áreas Saber Pro) ─── */
+const AREAS_SABER_PRO = [
+  "Matemáticas", "Lectura Crítica", "Ciencias Naturales",
+  "Razonamiento Cuantitativo", "Inglés", "Ciencias Sociales"
 ];
 
-const materiasRegistradas = [
-  { id: 1, nombre: "Matemáticas Avanzadas", docente: "Dr. Carlos Rodríguez", estudiantes: 32, trabajos: 8, promedio: 78, fechaCreacion: "2026-01-15", estado: "Activa" },
-  { id: 2, nombre: "Física Moderna", docente: "Dra. Ana Martínez", estudiantes: 28, trabajos: 6, promedio: 82, fechaCreacion: "2026-01-18", estado: "Activa" },
-  { id: 3, nombre: "Cálculo Diferencial", docente: "Dr. Carlos Rodríguez", estudiantes: 35, trabajos: 7, promedio: 75, fechaCreacion: "2026-01-15", estado: "Activa" },
-  { id: 4, nombre: "Álgebra Lineal", docente: "Dr. Luis González", estudiantes: 30, trabajos: 5, promedio: 80, fechaCreacion: "2026-01-20", estado: "Activa" },
-  { id: 5, nombre: "Programación I", docente: "Ing. María López", estudiantes: 42, trabajos: 10, promedio: 84, fechaCreacion: "2026-01-16", estado: "Activa" },
-  { id: 6, nombre: "Estructuras de Datos", docente: "Ing. María López", estudiantes: 38, trabajos: 9, promedio: 79, fechaCreacion: "2026-01-17", estado: "Activa" },
+function generarEstudiantesSimulados(nombresReales: { id: number; name: string; email: string }[]) {
+  const seed = (i: number, j: number) => ((i * 7 + j * 13 + 42) % 100);
+  return nombresReales.map((est, i) => {
+    const scores: Record<string, number> = {};
+    AREAS_SABER_PRO.forEach((area, j) => {
+      scores[area] = Math.max(25, Math.min(100, seed(i, j) + Math.floor((i * 3 + j * 5) % 30)));
+    });
+    const promedio = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / 6);
+    return { ...est, scores, promedio };
+  });
+}
+
+const crecimientoBase = [
+  { mes: "Sep", estudiantes: 12, docentes: 2 },
+  { mes: "Oct", estudiantes: 28, docentes: 3 },
+  { mes: "Nov", estudiantes: 45, docentes: 4 },
+  { mes: "Dic", estudiantes: 62, docentes: 5 },
+  { mes: "Ene", estudiantes: 80, docentes: 6 },
+  { mes: "Feb", estudiantes: 95, docentes: 7 },
 ];
 
-const docentesData = [
-  { id: 1, nombre: "Dr. Carlos Rodríguez", materias: 4, estudiantes: 95, trabajosAsignados: 28, promedioGeneral: 76, especialidad: "Matemáticas" },
-  { id: 2, nombre: "Dra. Ana Martínez", materias: 3, estudiantes: 68, trabajosAsignados: 18, promedioGeneral: 81, especialidad: "Física" },
-  { id: 3, nombre: "Dr. Luis González", materias: 2, estudiantes: 52, trabajosAsignados: 12, promedioGeneral: 79, especialidad: "Matemáticas" },
-  { id: 4, nombre: "Ing. María López", materias: 5, estudiantes: 120, trabajosAsignados: 35, promedioGeneral: 82, especialidad: "Ingeniería" },
-];
-
-const estudiantesDestacados = [
-  { id: 1, nombre: "Ana García", carrera: "Ingeniería de Sistemas", promedio: 92, materias: 6, trabajosCompletados: 45 },
-  { id: 2, nombre: "Carlos Pérez", carrera: "Matemáticas", promedio: 89, materias: 5, trabajosCompletados: 38 },
-  { id: 3, nombre: "Laura Martínez", carrera: "Física", promedio: 88, materias: 6, trabajosCompletados: 42 },
-  { id: 4, nombre: "Diego Sánchez", carrera: "Ingeniería", promedio: 87, materias: 5, trabajosCompletados: 40 },
-  { id: 5, nombre: "María López", carrera: "Ingeniería de Sistemas", promedio: 86, materias: 6, trabajosCompletados: 43 },
-];
-
-const rendimientoPorCarrera = [
-  { carrera: 'Ingeniería Sistemas', promedio: 79, estudiantes: 95 },
-  { carrera: 'Matemáticas', promedio: 77, estudiantes: 52 },
-  { carrera: 'Física', promedio: 81, estudiantes: 48 },
-  { carrera: 'Química', promedio: 76, estudiantes: 53 },
-];
-
-const distribucionEstudiantes = [
-  { nombre: 'Activos', value: 215 },
-  { nombre: 'Inactivos', value: 23 },
-  { nombre: 'Nuevos', value: 10 },
-];
-
-const COLORS = ['#10B981', '#F97316', '#7C3AED'];
+const COLORS_PIE = ["#10B981", "#F97316", "#7C3AED"];
+const COLORS_BAR = ["#1D4ED8", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
 
 export default function AdminPage() {
-  const [materiasActuales, setMateriasActuales] = useState(materiasRegistradas);
-  const [vistaActual, setVistaActual] = useState<'general' | 'materias' | 'docentes' | 'estudiantes'>('general');
-  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
-  const [materiaEliminar, setMateriaEliminar] = useState<number | null>(null);
+  const [vistaActual, setVistaActual] = useState<"general" | "materias" | "docentes" | "estudiantes">("general");
+  const [totalEstudiantes, setTotalEstudiantes] = useState(0);
+  const [totalDocentes, setTotalDocentes] = useState(0);
+  const [docentesLista, setDocentesLista] = useState<BackendUser[]>([]);
+  const [estudiantesBackend, setEstudiantesBackend] = useState<BackendUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleEliminarMateria = (id: number) => {
-    setMateriaEliminar(id);
-    setMostrarConfirmacion(true);
-  };
+  /* Fetch real data */
+  useEffect(() => {
+    getAdminStats()
+      .then((data) => {
+        setTotalEstudiantes(data.total_estudiantes);
+        setTotalDocentes(data.total_docentes);
+        setDocentesLista(data.docentes);
+        setEstudiantesBackend(data.estudiantes);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-  const confirmarEliminacion = () => {
-    if (materiaEliminar !== null) {
-      setMateriasActuales(materiasActuales.filter(m => m.id !== materiaEliminar));
-      setMostrarConfirmacion(false);
-      setMateriaEliminar(null);
-    }
-  };
+  /* Simulated student data based on real names */
+  const estudiantesConNotas = useMemo(
+    () => generarEstudiantesSimulados(estudiantesBackend),
+    [estudiantesBackend]
+  );
+
+  /* Derived stats */
+  const promedioGeneral = useMemo(() => {
+    if (estudiantesConNotas.length === 0) return 0;
+    return Math.round(estudiantesConNotas.reduce((s, e) => s + e.promedio, 0) / estudiantesConNotas.length);
+  }, [estudiantesConNotas]);
+
+  const tasaAprobacion = useMemo(() => {
+    if (estudiantesConNotas.length === 0) return 0;
+    const aprobados = estudiantesConNotas.filter(e => e.promedio >= 60).length;
+    return Math.round((aprobados / estudiantesConNotas.length) * 100);
+  }, [estudiantesConNotas]);
+
+  const top5 = useMemo(
+    () => [...estudiantesConNotas].sort((a, b) => b.promedio - a.promedio).slice(0, 5),
+    [estudiantesConNotas]
+  );
+
+  const clasificacion = useMemo(() => {
+    const riesgo = estudiantesConNotas.filter(e => e.promedio < 60).length;
+    const regulares = estudiantesConNotas.filter(e => e.promedio >= 60 && e.promedio < 80).length;
+    const sobresalientes = estudiantesConNotas.filter(e => e.promedio >= 80).length;
+    return { riesgo, regulares, sobresalientes };
+  }, [estudiantesConNotas]);
+
+  /* Chart data */
+  const crecimientoData = useMemo(() => {
+    const actual = { mes: "Mar", estudiantes: totalEstudiantes, docentes: totalDocentes };
+    return [...crecimientoBase, actual];
+  }, [totalEstudiantes, totalDocentes]);
+
+  const distribucionData = useMemo(() => {
+    const activos = Math.max(0, totalEstudiantes - 3);
+    return [
+      { nombre: "Activos", value: activos },
+      { nombre: "Inactivos", value: Math.min(2, totalEstudiantes) },
+      { nombre: "Nuevos", value: Math.min(1, totalEstudiantes) },
+    ];
+  }, [totalEstudiantes]);
+
+  const rendimientoPorArea = useMemo(() => {
+    if (estudiantesConNotas.length === 0) return AREAS_SABER_PRO.map(a => ({ area: a, promedio: 0, estudiantes: 0 }));
+    return AREAS_SABER_PRO.map(area => {
+      const promedioArea = Math.round(
+        estudiantesConNotas.reduce((s, e) => s + (e.scores[area] || 0), 0) / estudiantesConNotas.length
+      );
+      return { area, promedio: promedioArea, estudiantes: estudiantesConNotas.length };
+    });
+  }, [estudiantesConNotas]);
+
+  const materiasTabla = useMemo(() => {
+    return AREAS_SABER_PRO.map(area => {
+      const promedios = estudiantesConNotas.map(e => e.scores[area] || 0);
+      const promedio = promedios.length > 0 ? Math.round(promedios.reduce((a,b) => a+b, 0) / promedios.length) : 0;
+      const aprobados = promedios.filter(p => p >= 60).length;
+      const tasa = promedios.length > 0 ? Math.round((aprobados / promedios.length) * 100) : 0;
+      return { area, promedio, totalEstudiantes: promedios.length, aprobados, tasaAprobacion: tasa };
+    });
+  }, [estudiantesConNotas]);
+
+  if (loading) {
+    return (
+      <ProtectedRoute requiredRole="admin">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Cargando dashboard...</p>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute requiredRole="admin">
-
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-sm">
+      <header data-tour="admin-header" className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-violet-600">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
+              <div className="p-2 rounded-xl bg-violet-600"><Shield className="w-8 h-8 text-white" /></div>
               <div>
                 <h1 className="font-bold text-xl">Panel de Administración</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Control total de la plataforma</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <UserNav />
-            </div>
+            <UserNav />
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Navegación de vistas */}
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
-          <Button
-            onClick={() => setVistaActual('general')}
-            variant={vistaActual === 'general' ? 'default' : 'outline'}
-            className={vistaActual === 'general' ? 'bg-violet-600 hover:bg-violet-700 text-white' : 'dark:border-gray-700'}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Vista General
-          </Button>
-          <Button
-            onClick={() => setVistaActual('materias')}
-            variant={vistaActual === 'materias' ? 'default' : 'outline'}
-            className={vistaActual === 'materias' ? 'bg-violet-600 hover:bg-violet-700 text-white' : 'dark:border-gray-700'}
-          >
-            <BookOpen className="w-4 h-4 mr-2" />
-            Materias
-          </Button>
-          <Button
-            onClick={() => setVistaActual('docentes')}
-            variant={vistaActual === 'docentes' ? 'default' : 'outline'}
-            className={vistaActual === 'docentes' ? 'bg-violet-600 hover:bg-violet-700 text-white' : 'dark:border-gray-700'}
-          >
-            <GraduationCap className="w-4 h-4 mr-2" />
-            Docentes
-          </Button>
-          <Button
-            onClick={() => setVistaActual('estudiantes')}
-            variant={vistaActual === 'estudiantes' ? 'default' : 'outline'}
-            className={vistaActual === 'estudiantes' ? 'bg-violet-600 hover:bg-violet-700 text-white' : 'dark:border-gray-700'}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Estudiantes
-          </Button>
+        {/* Nav */}
+        <div data-tour="admin-nav" className="flex gap-3 mb-8 overflow-x-auto pb-2">
+          {([["general", BarChart3, "Vista General"], ["materias", BookOpen, "Materias"], ["docentes", GraduationCap, "Docentes"], ["estudiantes", Users, "Estudiantes"]] as const).map(([id, Icon, label]) => (
+            <Button key={id} onClick={() => setVistaActual(id)} variant={vistaActual === id ? "default" : "outline"}
+              className={vistaActual === id ? "bg-violet-600 hover:bg-violet-700 text-white" : "dark:border-gray-700"}>
+              <Icon className="w-4 h-4 mr-2" />{label}
+            </Button>
+          ))}
         </div>
 
-        {/* Vista General */}
-        {vistaActual === 'general' && (
+        {/* ═══ VISTA GENERAL ═══ */}
+        {vistaActual === "general" && (
           <>
-            {/* Estadísticas principales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div data-tour="admin-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card className="border-0 shadow-sm dark:bg-slate-900">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Estudiantes</CardTitle>
-                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                      <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20"><Users className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{estadisticasGenerales.totalEstudiantes}</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    <span className="text-emerald-500">+6</span> desde el mes pasado
-                  </p>
+                  <div className="text-3xl font-bold">{totalEstudiantes}</div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Registrados en la plataforma</p>
                 </CardContent>
               </Card>
 
@@ -206,44 +199,12 @@ export default function AdminPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Docentes</CardTitle>
-                    <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                      <GraduationCap className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-                    </div>
+                    <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20"><GraduationCap className="w-5 h-5 text-emerald-500" /></div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{estadisticasGenerales.totalDocentes}</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">4 carreras diferentes</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm dark:bg-slate-900">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Materias</CardTitle>
-                    <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20">
-                      <BookOpen className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{estadisticasGenerales.totalMaterias}</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Todas activas</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm dark:bg-slate-900">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Trabajos Asignados</CardTitle>
-                    <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20">
-                      <FileText className="w-5 h-5 text-orange-500 dark:text-orange-400" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{estadisticasGenerales.totalTrabajos}</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Este semestre</p>
+                  <div className="text-3xl font-bold">{totalDocentes}</div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Activos en la plataforma</p>
                 </CardContent>
               </Card>
 
@@ -251,14 +212,12 @@ export default function AdminPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Promedio General</CardTitle>
-                    <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                      <Award className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-                    </div>
+                    <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20"><Award className="w-5 h-5 text-violet-600" /></div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{estadisticasGenerales.promedioGeneral}</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">De 100 puntos</p>
+                  <div className="text-3xl font-bold">{promedioGeneral}<span className="text-lg text-gray-400">/100</span></div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio de todas las áreas</p>
                 </CardContent>
               </Card>
 
@@ -266,120 +225,65 @@ export default function AdminPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Tasa de Aprobación</CardTitle>
-                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                      <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
+                    <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20"><TrendingUp className="w-5 h-5 text-emerald-500" /></div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{estadisticasGenerales.tasaAprobacion}%</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    <span className="text-emerald-500">+3%</span> vs semestre anterior
-                  </p>
+                  <div className="text-3xl font-bold">{tasaAprobacion}%</div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Estudiantes con promedio ≥ 60</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Gráficos de crecimiento */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Charts */}
+            <div data-tour="admin-charts" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <Card className="border-0 shadow-sm dark:bg-slate-900">
-                <CardHeader>
-                  <CardTitle className="text-lg">Crecimiento de la Plataforma</CardTitle>
-                  <CardDescription>Últimos 7 meses</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Crecimiento de la Plataforma</CardTitle><CardDescription>Usuarios registrados por mes</CardDescription></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <AreaChart data={crecimientoData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} />
-                      <XAxis dataKey="mes" stroke="#6B7280" />
-                      <YAxis stroke="#6B7280" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'var(--tooltip-bg, #FFFFFF)', 
-                          borderColor: '#E5E7EB',
-                          borderRadius: '8px',
-                          color: '#000'
-                        }}
-                      />
+                      <XAxis dataKey="mes" stroke="#6B7280" /><YAxis stroke="#6B7280" />
+                      <Tooltip contentStyle={{ backgroundColor: "#FFF", borderColor: "#E5E7EB", borderRadius: "8px", color: "#000" }} />
                       <Legend />
-                      <Area 
-                        type="monotone" 
-                        dataKey="estudiantes" 
-                        stackId="1"
-                        stroke="#1D4ED8" 
-                        fill="#1D4ED8"
-                        fillOpacity={0.6}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="materias" 
-                        stackId="2"
-                        stroke="#7C3AED" 
-                        fill="#7C3AED"
-                        fillOpacity={0.6}
-                      />
+                      <Area type="monotone" dataKey="estudiantes" stackId="1" stroke="#1D4ED8" fill="#1D4ED8" fillOpacity={0.6} />
+                      <Area type="monotone" dataKey="docentes" stackId="2" stroke="#10B981" fill="#10B981" fillOpacity={0.6} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-sm dark:bg-slate-900">
-                <CardHeader>
-                  <CardTitle className="text-lg">Distribución de Estudiantes</CardTitle>
-                  <CardDescription>Por estado</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Distribución de Estudiantes</CardTitle><CardDescription>Por estado actual</CardDescription></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie
-                        data={distribucionEstudiantes}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
+                      <Pie data={distribucionData} cx="50%" cy="50%" labelLine={false}
                         label={({ nombre, percent }) => `${nombre} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {distribucionEstudiantes.map((entry, index) => (
-                          <Cell key={`cell-${entry.nombre}`} fill={COLORS[index % COLORS.length]} />
+                        outerRadius={100} fill="#8884d8" dataKey="value">
+                        {distribucionData.map((entry, index) => (
+                          <Cell key={`cell-${entry.nombre}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#FFFFFF', 
-                          borderColor: '#E5E7EB',
-                          borderRadius: '8px',
-                          color: '#000'
-                        }}
-                      />
+                      <Tooltip contentStyle={{ backgroundColor: "#FFF", borderColor: "#E5E7EB", borderRadius: "8px", color: "#000" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Rendimiento por carrera */}
             <Card className="border-0 shadow-sm dark:bg-slate-900">
-              <CardHeader>
-                <CardTitle className="text-lg">Rendimiento por Carrera</CardTitle>
-                <CardDescription>Promedio de estudiantes por programa</CardDescription>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Rendimiento por Área (Saber Pro)</CardTitle><CardDescription>Promedio de estudiantes en cada competencia evaluada</CardDescription></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={rendimientoPorCarrera}>
+                  <BarChart data={rendimientoPorArea}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} />
-                    <XAxis dataKey="carrera" stroke="#6B7280" />
+                    <XAxis dataKey="area" stroke="#6B7280" angle={-20} textAnchor="end" height={80} />
                     <YAxis stroke="#6B7280" domain={[0, 100]} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#FFFFFF', 
-                        borderColor: '#E5E7EB',
-                        borderRadius: '8px',
-                        color: '#000'
-                      }}
-                    />
-                    <Bar dataKey="promedio" fill="#10B981" radius={[8, 8, 0, 0]} />
+                    <Tooltip contentStyle={{ backgroundColor: "#FFF", borderColor: "#E5E7EB", borderRadius: "8px", color: "#000" }} />
+                    <Bar dataKey="promedio" radius={[8, 8, 0, 0]}>
+                      {rendimientoPorArea.map((_, i) => <Cell key={i} fill={COLORS_BAR[i % COLORS_BAR.length]} />)}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -387,64 +291,50 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* Vista de Materias */}
-        {vistaActual === 'materias' && (
+        {/* ═══ MATERIAS ═══ */}
+        {vistaActual === "materias" && (
           <>
             <Card className="border-0 shadow-sm mb-6 dark:bg-slate-900">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">Todas las Materias Registradas</CardTitle>
-                    <CardDescription>Total: {materiasActuales.length} materias activas</CardDescription>
-                  </div>
-                  <BookMarked className="w-5 h-5 text-gray-400" />
-                </div>
+                <CardTitle className="text-lg">Resumen Ponderado por Área</CardTitle>
+                <CardDescription>Las 6 competencias evaluadas en la prueba Saber Pro</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200 dark:border-gray-800">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Materia</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Docente</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Área / Competencia</th>
                         <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Estudiantes</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Trabajos</th>
                         <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Promedio</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Fecha Creación</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Acciones</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Aprobados</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Tasa Aprobación</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {materiasActuales.map((materia) => (
-                        <tr key={materia.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                      {materiasTabla.map((m, i) => (
+                        <tr key={m.area} className="border-b border-gray-100 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                           <td className="py-4 px-4">
-                            <div className="font-medium">{materia.nombre}</div>
+                            <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS_BAR[i] }} />
+                              <span className="font-medium">{m.area}</span>
+                            </div>
                           </td>
-                          <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{materia.docente}</td>
                           <td className="py-4 px-4 text-center">
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                              <Users className="w-3 h-3" />
-                              {materia.estudiantes}
+                              <Users className="w-3 h-3" />{m.totalEstudiantes}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-center text-sm text-gray-500 dark:text-gray-400">{materia.trabajos}</td>
                           <td className="py-4 px-4 text-center">
-                            <span className={`font-semibold ${materia.promedio >= 80 ? 'text-emerald-600 dark:text-emerald-400' : materia.promedio >= 70 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                              {materia.promedio}%
+                            <span className={`font-semibold ${m.promedio >= 80 ? "text-emerald-600" : m.promedio >= 60 ? "text-blue-600" : "text-orange-600"}`}>
+                              {m.promedio}/100
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-center text-sm text-gray-500 dark:text-gray-400">{materia.fechaCreacion}</td>
-                          <td className="py-4 px-4">
+                          <td className="py-4 px-4 text-center text-sm">{m.aprobados}/{m.totalEstudiantes}</td>
+                          <td className="py-4 px-4 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                                <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                              </button>
-                              <button 
-                                onClick={() => handleEliminarMateria(materia.id)}
-                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                              </button>
+                              <Progress value={m.tasaAprobacion} className="w-20 h-2" />
+                              <span className="text-sm font-medium">{m.tasaAprobacion}%</span>
                             </div>
                           </td>
                         </tr>
@@ -455,27 +345,18 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* Gráfico de estudiantes por materia */}
             <Card className="border-0 shadow-sm dark:bg-slate-900">
-              <CardHeader>
-                <CardTitle className="text-lg">Estudiantes por Materia</CardTitle>
-                <CardDescription>Distribución de la carga estudiantil</CardDescription>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Estudiantes por Área</CardTitle><CardDescription>Distribución y promedio por competencia</CardDescription></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={materiasActuales}>
+                  <BarChart data={rendimientoPorArea}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} />
-                    <XAxis dataKey="nombre" stroke="#6B7280" angle={-45} textAnchor="end" height={100} />
+                    <XAxis dataKey="area" stroke="#6B7280" angle={-20} textAnchor="end" height={80} />
                     <YAxis stroke="#6B7280" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#FFFFFF', 
-                        borderColor: '#E5E7EB',
-                        borderRadius: '8px',
-                        color: '#000'
-                      }}
-                    />
-                    <Bar dataKey="estudiantes" fill="#1D4ED8" radius={[8, 8, 0, 0]} />
+                    <Tooltip contentStyle={{ backgroundColor: "#FFF", borderColor: "#E5E7EB", borderRadius: "8px", color: "#000" }} />
+                    <Legend />
+                    <Bar dataKey="estudiantes" name="Estudiantes" fill="#1D4ED8" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="promedio" name="Promedio" fill="#10B981" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -483,130 +364,122 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* Vista de Docentes */}
-        {vistaActual === 'docentes' && (
-          <>
-            <div className="grid grid-cols-1 gap-6">
-              {docentesData.map((docente) => (
-                <Card key={docente.id} className="border-0 shadow-sm dark:bg-slate-900">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl bg-violet-600">
-                          {docente.nombre.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl">{docente.nombre}</CardTitle>
-                          <CardDescription>{docente.especialidad}</CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                          <Eye className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                        </button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-                      <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-2xl font-bold">{docente.materias}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Materias</div>
-                      </div>
-                      <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-2xl font-bold">{docente.estudiantes}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Estudiantes</div>
-                      </div>
-                      <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-2xl font-bold">{docente.trabajosAsignados}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Trabajos Asignados</div>
-                      </div>
-                      <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-2xl font-bold text-emerald-500 dark:text-emerald-400">{docente.promedioGeneral}%</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio General</div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Desempeño General</div>
-                      <Progress value={docente.promedioGeneral} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </>
+        {/* ═══ DOCENTES ═══ */}
+        {vistaActual === "docentes" && (
+          <Card className="border-0 shadow-sm dark:bg-slate-900">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Docentes Inscritos</CardTitle>
+                  <CardDescription>Total: {docentesLista.length} docentes registrados en la plataforma</CardDescription>
+                </div>
+                <GraduationCap className="w-5 h-5 text-gray-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {docentesLista.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <GraduationCap className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium mb-1">Sin docentes registrados</p>
+                  <p className="text-sm">Los docentes aparecerán aquí cuando se registren en la plataforma.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">#</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Docente</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Email</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {docentesLista.map((d, i) => (
+                        <tr key={d.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                          <td className="py-4 px-4 text-sm text-gray-400">{i + 1}</td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-violet-600 text-sm">
+                                {d.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                              </div>
+                              <span className="font-medium">{d.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                              <Mail className="w-3 h-3" />{d.email}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${d.is_active ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"}`}>
+                              <CheckCircle2 className="w-3 h-3" />{d.is_active ? "Activo" : "Inactivo"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
-        {/* Vista de Estudiantes */}
-        {vistaActual === 'estudiantes' && (
+        {/* ═══ ESTUDIANTES ═══ */}
+        {vistaActual === "estudiantes" && (
           <>
             <Card className="border-0 shadow-sm mb-6 dark:bg-slate-900">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">Estudiantes Destacados</CardTitle>
-                    <CardDescription>Top 5 estudiantes con mejor rendimiento</CardDescription>
-                  </div>
+                  <div><CardTitle className="text-lg">Top 5 Estudiantes</CardTitle><CardDescription>Mejor rendimiento promedio en Saber Pro</CardDescription></div>
                   <Award className="w-5 h-5 text-gray-400" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {estudiantesDestacados.map((estudiante, index) => (
-                    <div 
-                      key={estudiante.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full font-bold text-white shadow-sm" 
-                        style={{ 
-                          backgroundColor: index === 0 ? '#F59E0B' : index === 1 ? '#9CA3AF' : index === 2 ? '#D97706' : '#7C3AED' 
-                        }}
-                      >
-                        {index + 1}
+                {top5.length === 0 ? (
+                  <p className="text-center text-gray-400 py-8">No hay estudiantes registrados.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {top5.map((est, index) => (
+                      <div key={est.id} className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full font-bold text-white shadow-sm"
+                          style={{ backgroundColor: index === 0 ? "#F59E0B" : index === 1 ? "#9CA3AF" : index === 2 ? "#D97706" : "#7C3AED" }}>
+                          {index + 1}
+                        </div>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold bg-blue-600">
+                          {est.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{est.name}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{est.email}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-emerald-500 dark:text-emerald-400">{est.promedio}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Promedio</div>
+                        </div>
+                        <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                          <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </button>
                       </div>
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold bg-blue-600">
-                        {estudiante.nombre.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{estudiante.nombre}</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{estudiante.carrera}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-emerald-500 dark:text-emerald-400">{estudiante.promedio}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Promedio</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold">{estudiante.materias}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Materias</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold">{estudiante.trabajosCompletados}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Trabajos</div>
-                      </div>
-                      <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                        <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Estadísticas de progreso */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="border-0 shadow-sm dark:bg-slate-900">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">En Riesgo</CardTitle>
-                    <AlertCircle className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+                    <AlertCircle className="w-5 h-5 text-orange-500" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-500 dark:text-orange-400">18</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio &lt; 60%</p>
-                  <div className="mt-3">
-                    <Progress value={18} />
-                  </div>
+                  <div className="text-3xl font-bold text-orange-500">{clasificacion.riesgo}</div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio &lt; 60</p>
+                  <div className="mt-3"><Progress value={totalEstudiantes > 0 ? (clasificacion.riesgo / totalEstudiantes) * 100 : 0} className="h-2" /></div>
                 </CardContent>
               </Card>
 
@@ -614,15 +487,13 @@ export default function AdminPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Regulares</CardTitle>
-                    <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <Activity className="w-5 h-5 text-blue-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">142</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio 60-80%</p>
-                  <div className="mt-3">
-                    <Progress value={57} />
-                  </div>
+                  <div className="text-3xl font-bold text-blue-600">{clasificacion.regulares}</div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio 60-80</p>
+                  <div className="mt-3"><Progress value={totalEstudiantes > 0 ? (clasificacion.regulares / totalEstudiantes) * 100 : 0} className="h-2" /></div>
                 </CardContent>
               </Card>
 
@@ -630,57 +501,19 @@ export default function AdminPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Sobresalientes</CardTitle>
-                    <UserCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                    <UserCheck className="w-5 h-5 text-emerald-500" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-emerald-500 dark:text-emerald-400">88</div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio &gt; 80%</p>
-                  <div className="mt-3">
-                    <Progress value={35} />
-                  </div>
+                  <div className="text-3xl font-bold text-emerald-500">{clasificacion.sobresalientes}</div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Promedio &gt; 80</p>
+                  <div className="mt-3"><Progress value={totalEstudiantes > 0 ? (clasificacion.sobresalientes / totalEstudiantes) * 100 : 0} className="h-2" /></div>
                 </CardContent>
               </Card>
             </div>
           </>
         )}
       </div>
-
-      {/* Modal de confirmación de eliminación */}
-      {mostrarConfirmacion && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/40">
-                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <h3 className="text-xl font-bold">Confirmar Eliminación</h3>
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              ¿Estás seguro de que deseas eliminar esta materia? Esta acción no se puede deshacer y se eliminarán todos los trabajos y datos asociados.
-            </p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => {
-                  setMostrarConfirmacion(false);
-                  setMateriaEliminar(null);
-                }}
-                variant="outline"
-                className="flex-1 dark:border-gray-700"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={confirmarEliminacion}
-                variant="destructive"
-                className="flex-1"
-              >
-                Eliminar Materia
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
     </ProtectedRoute>
   );

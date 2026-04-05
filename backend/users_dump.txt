@@ -1,0 +1,7 @@
+ryanhdez27@iudc.com|estudiante|Ryan Andrey Hernandez Galindo
+pepito123@gmail.com|estudiante|pepito perez
+julioprofe2@iudc.com|profesor|julio profe
+admin2@siproudc.com|admin|Sipro Admin UDC
+julioprofe@iudc.com|profesor|julio profe
+admin@siproudc.com|admin|Sipro Admin UDC
+admin@example.com|estudiante|Sant

@@ -104,7 +104,7 @@ export default function ProfesorPage() {
 
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-sm">
+      <header data-tour="profesor-header" className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export default function ProfesorPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Estadísticas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div data-tour="profesor-stats" className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="border-0 shadow-sm dark:bg-slate-900">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ export default function ProfesorPage() {
         </div>
 
         {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div data-tour="profesor-content" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Gráfico de estudiantes registrados */}
           <Card className="border-0 shadow-sm dark:bg-slate-900">
             <CardHeader>
