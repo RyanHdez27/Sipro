@@ -39,7 +39,7 @@ def build_error_response(status_code: int, message: str, details: list | None = 
 # Configura CORS para el frontend en Next.js
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://sipro-4zju81vlh-ryan-andrey-hernandez-galindos-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
