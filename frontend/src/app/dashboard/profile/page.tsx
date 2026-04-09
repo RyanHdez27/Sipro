@@ -18,9 +18,9 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import {
-  User, Lock, Settings, Bell, Shield, Save, Camera, Home, Target, TrendingUp, Award,
-  CheckCircle2, AlertCircle, Trophy, Flame, Zap, BookOpen, Clock, BarChart3, GraduationCap,
-  Globe, Calendar, Activity, Star
+  User, Lock, Shield, Save, Camera, Home, TrendingUp,
+  CheckCircle2, AlertCircle, Trophy, Flame, Clock, BarChart3,
+  Calendar, Activity, Star
 } from "lucide-react";
 
 const evolucionPuntajes = [
@@ -49,19 +49,7 @@ function ConfiguracionEstudiante() {
   const [carrera, setCarrera] = useState("Ingeniería de Sistemas");
   const [universidad, setUniversidad] = useState("IUDC");
   const [semestre, setSemestre] = useState("8");
-  const puntajeActual = 270;
   const progresoGeneral = 75;
-  const [objetivoPuntaje, setObjetivoPuntaje] = useState("300");
-  const [frecuenciaPractica, setFrecuenciaPractica] = useState("semanal");
-  const [dificultadPreferida, setDificultadPreferida] = useState("intermedio");
-  const [areasInteres, setAreasInteres] = useState({ lecturaCritica: true, razonamientoCuantitativo: true, competenciasCiudadanas: false, ingles: true });
-  const [simulacrosAutomaticos, setSimulacrosAutomaticos] = useState(true);
-  const [recomendacionesIA, setRecomendacionesIA] = useState(true);
-  const [notifRecordatorios, setNotifRecordatorios] = useState(true);
-  const [notifSimulacros, setNotifSimulacros] = useState(true);
-  const [notifResultados, setNotifResultados] = useState(true);
-  const [notifRecomendaciones, setNotifRecomendaciones] = useState(true);
-  const [notifEmail, setNotifEmail] = useState(false);
   const [passwordActual, setPasswordActual] = useState("");
   const [passwordNueva, setPasswordNueva] = useState("");
   const [passwordConfirmar, setPasswordConfirmar] = useState("");
@@ -73,16 +61,6 @@ function ConfiguracionEstudiante() {
     { nombre: "Top 10%", descripcion: "Entre los mejores estudiantes", Icon: Trophy, color: "#7C3AED", desbloqueado: false },
     { nombre: "Experto", descripcion: "100 simulacros completados", Icon: Star, color: "#1D4ED8", desbloqueado: false },
   ];
-
-  const diferencia = parseInt(objetivoPuntaje) - puntajeActual;
-  const motivacion = diferencia <= 0
-    ? { texto: "¡Felicitaciones! Has superado tu objetivo", color: "#10B981", Icon: Trophy }
-    : { texto: `Estás a ${diferencia} puntos de tu objetivo Saber Pro`, color: "#1D4ED8", Icon: Target };
-
-  const areaDebil = rendimientoPorArea.find(a => a.puntaje < a.promedio);
-  const recomendacion = areaDebil
-    ? { texto: `Refuerza ${areaDebil.area} – bajo rendimiento detectado`, color: "#F97316", Icon: AlertCircle }
-    : { texto: "¡Excelente! Mantén el ritmo en todas las áreas", color: "#10B981", Icon: CheckCircle2 };
 
   const handleCambiarPassword = () => {
     if (passwordNueva !== passwordConfirmar || passwordNueva.length < 6) return;
@@ -107,24 +85,9 @@ function ConfiguracionEstudiante() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Banners motivacionales */}
-        <div data-tour="config-motivation" className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <div className="p-4 rounded-lg border-2 flex items-center gap-3" style={{ backgroundColor: `${motivacion.color}15`, borderColor: `${motivacion.color}40` }}>
-            <motivacion.Icon className="h-6 w-6 flex-shrink-0" style={{ color: motivacion.color }} />
-            <p className="font-semibold" style={{ color: motivacion.color }}>{motivacion.texto}</p>
-          </div>
-          {recomendacionesIA && (
-            <div className="p-4 rounded-lg border-2 flex items-center gap-3" style={{ backgroundColor: `${recomendacion.color}15`, borderColor: `${recomendacion.color}40` }}>
-              <recomendacion.Icon className="h-6 w-6 flex-shrink-0" style={{ color: recomendacion.color }} />
-              <p className="font-semibold" style={{ color: recomendacion.color }}>{recomendacion.texto}</p>
-            </div>
-          )}
-        </div>
-
         <Tabs defaultValue="perfil" className="space-y-6">
-          <TabsList data-tour="config-tabs" className="grid w-full grid-cols-4 lg:w-[600px] dark:bg-slate-800">
+          <TabsList data-tour="config-tabs" className="grid w-full grid-cols-3 lg:w-[450px] dark:bg-slate-800">
             <TabsTrigger value="perfil"><User className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Perfil</span></TabsTrigger>
-            <TabsTrigger value="academico"><Target className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Académico</span></TabsTrigger>
             <TabsTrigger value="progreso"><BarChart3 className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Progreso</span></TabsTrigger>
             <TabsTrigger value="seguridad"><Shield className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Seguridad</span></TabsTrigger>
           </TabsList>
@@ -175,91 +138,6 @@ function ConfiguracionEstudiante() {
                 </div>
                 <div className="flex justify-end pt-4">
                   <Button className="bg-blue-700 hover:bg-blue-800 flex items-center gap-2"><Save className="h-4 w-4" />Guardar Cambios</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ─── ACADÉMICO ─── */}
-          <TabsContent value="academico">
-            <Card className="border-0 shadow-sm dark:bg-slate-900">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-violet-600" />Configuración Académica Personalizada</CardTitle>
-                <CardDescription>Personaliza tu experiencia de aprendizaje según tus objetivos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Objetivo de Puntaje Saber Pro</Label>
-                  <Select value={objetivoPuntaje} onValueChange={setObjetivoPuntaje}>
-                    <SelectTrigger className="dark:bg-slate-800 dark:border-gray-700"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="250">250 puntos</SelectItem><SelectItem value="275">275 puntos</SelectItem><SelectItem value="300">300 puntos</SelectItem><SelectItem value="325">325 puntos</SelectItem><SelectItem value="350">350+ puntos</SelectItem></SelectContent>
-                  </Select>
-                  <div className="flex items-center justify-between text-sm mt-2"><span className="text-gray-500">Puntaje actual:</span><span className="font-bold text-emerald-500">{puntajeActual} puntos</span></div>
-                </div>
-                <Separator className="dark:border-gray-800" />
-                <div className="space-y-4">
-                  <Label className="text-base">Áreas de Interés Prioritarias</Label>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {[
-                      { key: "lecturaCritica", label: "Lectura Crítica", Icon: BookOpen, color: "text-blue-700" },
-                      { key: "razonamientoCuantitativo", label: "Razonamiento Cuantitativo", Icon: Activity, color: "text-emerald-500" },
-                      { key: "competenciasCiudadanas", label: "Competencias Ciudadanas", Icon: GraduationCap, color: "text-violet-600" },
-                      { key: "ingles", label: "Inglés", Icon: Globe, color: "text-orange-500" },
-                    ].map(({ key, label, Icon, color }) => (
-                      <div key={key} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
-                        <div className="flex items-center gap-3"><Icon className={`h-5 w-5 ${color}`} /><span className="font-medium">{label}</span></div>
-                        <Switch checked={areasInteres[key as keyof typeof areasInteres]} onCheckedChange={v => setAreasInteres({ ...areasInteres, [key]: v })} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <Separator className="dark:border-gray-800" />
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Frecuencia de Práctica</Label>
-                    <Select value={frecuenciaPractica} onValueChange={setFrecuenciaPractica}>
-                      <SelectTrigger className="dark:bg-slate-800 dark:border-gray-700"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="diario">Diario</SelectItem><SelectItem value="semanal">Semanal</SelectItem><SelectItem value="personalizado">Personalizado</SelectItem></SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Dificultad Preferida</Label>
-                    <Select value={dificultadPreferida} onValueChange={setDificultadPreferida}>
-                      <SelectTrigger className="dark:bg-slate-800 dark:border-gray-700"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="basico">Básico</SelectItem><SelectItem value="intermedio">Intermedio</SelectItem><SelectItem value="avanzado">Avanzado</SelectItem></SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Separator className="dark:border-gray-800" />
-                <div className="space-y-3">
-                  <Label className="text-base">Configuraciones Avanzadas</Label>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <div><div className="text-sm font-medium">Simulacros Automáticos</div><div className="text-sm text-gray-500">Genera simulacros personalizados basados en tu progreso</div></div>
-                    <Switch checked={simulacrosAutomaticos} onCheckedChange={setSimulacrosAutomaticos} />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <div><div className="text-sm font-medium flex items-center gap-2">Recomendaciones Inteligentes <Zap className="h-4 w-4 text-violet-600" /></div><div className="text-sm text-gray-500">Recibe sugerencias de IA para mejorar tu rendimiento</div></div>
-                    <Switch checked={recomendacionesIA} onCheckedChange={setRecomendacionesIA} />
-                  </div>
-                </div>
-                <Separator className="dark:border-gray-800" />
-                <div className="space-y-3">
-                  <Label className="text-base flex items-center gap-2"><Bell className="h-5 w-5 text-orange-500" />Notificaciones</Label>
-                  {[
-                    { label: "Recordatorios de estudio", state: notifRecordatorios, set: setNotifRecordatorios },
-                    { label: "Nuevos simulacros disponibles", state: notifSimulacros, set: setNotifSimulacros },
-                    { label: "Resultados de pruebas", state: notifResultados, set: setNotifResultados },
-                    { label: "Recomendaciones personalizadas", state: notifRecomendaciones, set: setNotifRecomendaciones },
-                    { label: "Notificaciones por email", state: notifEmail, set: setNotifEmail },
-                  ].map(({ label, state, set }, i) => (
-                    <div key={i}>
-                      <div className="flex items-center justify-between py-2"><span className="text-sm">{label}</span><Switch checked={state} onCheckedChange={set} /></div>
-                      {i < 4 && <Separator className="dark:border-gray-800" />}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-end pt-4">
-                  <Button className="bg-emerald-500 hover:bg-emerald-600 flex items-center gap-2"><Save className="h-4 w-4" />Guardar Configuración</Button>
                 </div>
               </CardContent>
             </Card>
