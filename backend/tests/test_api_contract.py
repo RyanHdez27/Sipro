@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.security import create_access_token, get_password_hash
 from app.db.database import Base, get_db
 from app.main import app, clear_rate_limit_store
-from app.models.user import TeacherCode, User, UserRole
+from app.models.user import PasswordResetToken, TeacherCode, User, UserRole
 
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
@@ -136,6 +136,81 @@ def test_reset_password_returns_202_when_user_exists():
     assert "password reset link" in response.json()["msg"]
 
 
+def test_reset_password_unknown_user_returns_202_contract():
+    response = client.post(
+        "/auth/reset-password",
+        json={"email": "missing@example.com"},
+    )
+
+    assert response.status_code == 202
+    assert "password reset link" in response.json()["msg"]
+
+
+def test_reset_password_confirm_updates_password():
+    create_user("laura@example.com", "secret123")
+
+    original_token_factory = auth_router.generate_password_reset_token
+    auth_router.generate_password_reset_token = lambda: "known-reset-token"
+    try:
+        request_response = client.post(
+            "/auth/reset-password",
+            json={"email": "laura@example.com"},
+        )
+    finally:
+        auth_router.generate_password_reset_token = original_token_factory
+
+    assert request_response.status_code == 202
+
+    confirm_response = client.post(
+        "/auth/reset-password/confirm",
+        json={"token": "known-reset-token", "new_password": "newsecret123"},
+    )
+
+    assert confirm_response.status_code == 200
+    assert confirm_response.json()["msg"] == "Password updated successfully"
+
+    login_response = client.post(
+        "/auth/login",
+        data={"username": "laura@example.com", "password": "newsecret123"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+
+    assert login_response.status_code == 200
+
+    db = TestingSessionLocal()
+    reset_token = db.query(PasswordResetToken).first()
+    assert reset_token is not None
+    assert reset_token.used_at is not None
+    db.close()
+
+
+def test_reset_password_confirm_rejects_used_token():
+    create_user("laura@example.com", "secret123")
+
+    original_token_factory = auth_router.generate_password_reset_token
+    auth_router.generate_password_reset_token = lambda: "known-reset-token"
+    try:
+        client.post(
+            "/auth/reset-password",
+            json={"email": "laura@example.com"},
+        )
+    finally:
+        auth_router.generate_password_reset_token = original_token_factory
+
+    first_confirm = client.post(
+        "/auth/reset-password/confirm",
+        json={"token": "known-reset-token", "new_password": "newsecret123"},
+    )
+    second_confirm = client.post(
+        "/auth/reset-password/confirm",
+        json={"token": "known-reset-token", "new_password": "anothersecret123"},
+    )
+
+    assert first_confirm.status_code == 200
+    assert second_confirm.status_code == 400
+    assert second_confirm.json()["error"]["code"] == "HTTP_400"
+
+
 def test_register_malformed_json_returns_400_contract():
     # Un JSON mal formado se trata como bad request y no como error semantico de validacion.
     response = client.post(
@@ -162,16 +237,6 @@ def test_inactive_user_returns_403():
 
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "HTTP_403"
-
-
-def test_reset_password_unknown_user_returns_404_contract():
-    response = client.post(
-        "/auth/reset-password",
-        json={"email": "missing@example.com"},
-    )
-
-    assert response.status_code == 404
-    assert response.json()["error"]["code"] == "HTTP_404"
 
 
 def test_register_method_not_allowed_returns_405_contract():

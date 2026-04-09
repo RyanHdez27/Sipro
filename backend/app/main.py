@@ -82,6 +82,7 @@ async def request_contract_middleware(request: Request, call_next):
         ("/auth/register", "POST"),
         ("/auth/register/teacher", "POST"),
         ("/auth/reset-password", "POST"),
+        ("/auth/reset-password/confirm", "POST"),
         ("/users/me", "PUT"),
     }
     login_routes = {("/auth/login", "POST")}
