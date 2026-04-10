@@ -18,10 +18,10 @@ import {
   getLoginLogs, clearLoginLogs,
 } from "@/lib/api";
 import {
-  User, Shield, Key, Bell, Save, Camera, Home,
+  User, Shield, Key, Save, Camera, Home,
   Copy, Trash2, Clock, CheckCircle2, XCircle, AlertTriangle,
-  Users, Activity, Lock, UserPlus, Mail, Monitor,
-  LogIn, Send, Loader2
+  Users, Activity, Lock, UserPlus, Monitor,
+  LogIn, Loader2
 } from "lucide-react";
 
 /* ───────── TYPES ───────── */
@@ -36,9 +36,7 @@ interface LogEntry {
   id: number; user_email: string; action: string; ip: string;
   user_agent: string; success: boolean; created_at: string;
 }
-interface Notificacion {
-  id: number; asunto: string; mensaje: string; destinatarios: string; fecha: string;
-}
+
 
 /* ───────── HELPERS ───────── */
 function diasRestantes(fechaExp: string): number {
@@ -92,13 +90,6 @@ function ConfiguracionAdmin() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [filtroLog, setFiltroLog] = useState<"todos" | "acceso" | "alerta">("todos");
 
-  /* Notifications (stays frontend-only) */
-  const [notifMasivas, setNotifMasivas] = useState(true);
-  const [alertasSistema, setAlertasSistema] = useState(true);
-  const [notifAsunto, setNotifAsunto] = useState("");
-  const [notifMensaje, setNotifMensaje] = useState("");
-  const [historialNotif, setHistorialNotif] = useState<Notificacion[]>([]);
-  const [notifExito, setNotifExito] = useState<string | null>(null);
 
   /* ─── LOAD DATA FROM BACKEND ─── */
   useEffect(() => {
@@ -175,15 +166,6 @@ function ConfiguracionAdmin() {
     } catch { /* silent */ }
   };
 
-  /* ─── HANDLERS: NOTIFICACIONES (frontend-only) ─── */
-  const handleEnviarNotif = (dest: string) => {
-    setNotifExito(null);
-    if (!notifAsunto.trim() || !notifMensaje.trim()) return;
-    setHistorialNotif([{ id: Date.now(), asunto: notifAsunto, mensaje: notifMensaje, destinatarios: dest, fecha: new Date().toLocaleString("es-CO") }, ...historialNotif]);
-    setNotifExito(`Notificación enviada a: ${dest}`);
-    setNotifAsunto(""); setNotifMensaje("");
-    setTimeout(() => setNotifExito(null), 4000);
-  };
 
   const getEstadoBadge = (estado: string) => ({
     activo: <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white">Activo</Badge>,
@@ -216,11 +198,10 @@ function ConfiguracionAdmin() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="perfil" className="space-y-6">
-          <TabsList data-tour="config-tabs" className="grid grid-cols-4 w-full max-w-3xl">
+          <TabsList data-tour="config-tabs" className="grid grid-cols-3 w-full max-w-2xl">
             <TabsTrigger value="perfil" className="gap-2"><User className="h-4 w-4" />Perfil</TabsTrigger>
             <TabsTrigger value="accesos" className="gap-2"><Key className="h-4 w-4" />Accesos</TabsTrigger>
             <TabsTrigger value="seguridad" className="gap-2"><Shield className="h-4 w-4" />Seguridad</TabsTrigger>
-            <TabsTrigger value="notificaciones" className="gap-2"><Bell className="h-4 w-4" />Notif.</TabsTrigger>
           </TabsList>
 
           {/* ═══ PERFIL ═══ */}
@@ -386,53 +367,7 @@ function ConfiguracionAdmin() {
             </Card>
           </TabsContent>
 
-          {/* ═══ NOTIFICACIONES (frontend-only, unchanged) ═══ */}
-          <TabsContent value="notificaciones" className="space-y-6">
-            <Card className="border-0 shadow-sm">
-              <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-orange-500" />Notificaciones Globales</CardTitle><CardDescription>Configura y envía notificaciones del sistema</CardDescription></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
-                  <div><p className="font-medium">Notificaciones Masivas</p><p className="text-sm text-gray-500">Permite enviar notificaciones a todos los usuarios</p></div>
-                  <Switch checked={notifMasivas} onCheckedChange={setNotifMasivas} />
-                </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
-                  <div><p className="font-medium">Alertas del Sistema</p><p className="text-sm text-gray-500">Notificaciones sobre problemas técnicos</p></div>
-                  <Switch checked={alertasSistema} onCheckedChange={setAlertasSistema} />
-                </div>
-                <Separator />
-                <div className={`${!notifMasivas ? "opacity-50 pointer-events-none" : ""}`}>
-                  {!notifMasivas && <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 mb-4"><AlertTriangle className="inline h-4 w-4 mr-1" />Las notificaciones masivas están desactivadas.</div>}
-                  <h4 className="font-semibold mb-3">Enviar Notificación Masiva</h4>
-                  <Input placeholder="Asunto de la notificación" value={notifAsunto} onChange={e => setNotifAsunto(e.target.value)} className="mb-3" />
-                  <textarea placeholder="Mensaje de la notificación..." value={notifMensaje} onChange={e => setNotifMensaje(e.target.value)} className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent resize-none min-h-[100px]" />
-                  {notifExito && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-600 mt-3">{notifExito}</div>}
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    <Button onClick={() => handleEnviarNotif("Estudiantes")} disabled={!notifAsunto.trim() || !notifMensaje.trim()} className="bg-emerald-500 hover:bg-emerald-600 text-white"><Mail className="mr-2 h-4 w-4" />Enviar a Estudiantes</Button>
-                    <Button onClick={() => handleEnviarNotif("Docentes")} disabled={!notifAsunto.trim() || !notifMensaje.trim()} className="bg-violet-500 hover:bg-violet-600 text-white"><Mail className="mr-2 h-4 w-4" />Enviar a Docentes</Button>
-                    <Button onClick={() => handleEnviarNotif("Todos")} disabled={!notifAsunto.trim() || !notifMensaje.trim()} className="bg-gradient-to-r from-violet-500 to-emerald-500 hover:from-violet-600 hover:to-emerald-600 text-white"><Send className="mr-2 h-4 w-4" />Enviar a Todos</Button>
-                  </div>
-                </div>
 
-                {historialNotif.length > 0 && (
-                  <div className="mt-6">
-                    <Separator className="mb-4" />
-                    <h4 className="font-semibold mb-3">Historial de Notificaciones</h4>
-                    <div className="space-y-3">
-                      {historialNotif.map(n => (
-                        <div key={n.id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-900">
-                          <div className="flex justify-between items-start"><p className="font-medium text-sm">{n.asunto}</p><span className="text-xs text-gray-500">{n.fecha}</span></div>
-                          <p className="text-xs text-gray-500 mt-1">{n.mensaje}</p>
-                          <Badge variant="secondary" className="mt-2 text-xs">{n.destinatarios}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end mt-4"><Button className="bg-violet-600 hover:bg-violet-700 text-white"><Save className="mr-2 h-4 w-4" />Guardar Preferencias</Button></div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </div>
