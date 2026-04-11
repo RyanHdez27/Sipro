@@ -1,11 +1,12 @@
 "use client";
+import { Suspense } from "react";
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { KeyRound, Lock, ShieldCheck } from "lucide-react";
 
-export default function ConfirmResetPasswordPage() {
+function ConfirmForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
@@ -191,5 +192,17 @@ export default function ConfirmResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <p className="text-gray-500">Cargando...</p>
+      </div>
+    }>
+      <ConfirmForm />
+    </Suspense>
   );
 }
