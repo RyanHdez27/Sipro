@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Brain, Mail, Lock, Eye, EyeOff, User, GraduationCap, CheckCircle } from "lucide-react";
+import { Brain, Mail, Lock, Eye, EyeOff, User, GraduationCap, CheckCircle, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { registerUser, registerTeacher } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -13,7 +14,8 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    tipoUsuario: "estudiante"
+    tipoUsuario: "estudiante" as "estudiante" | "docente",
+    carrera: "",
   });
   const [teacherCode, setTeacherCode] = useState("");
   const [mostrarPassword, setMostrarPassword] = useState(false);
@@ -21,6 +23,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -67,21 +70,30 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      if (formData.tipoUsuario === "docente") {
-        await registerTeacher({ 
-          name: formData.nombre, 
-          email: formData.email, 
-          password: formData.password, 
-          wants_newsletter: aceptaTerminos, 
-          teacher_code: teacherCode 
-        });
-      } else {
-        await registerUser({ 
-          name: formData.nombre, 
-          email: formData.email, 
-          password: formData.password, 
-          wants_newsletter: aceptaTerminos 
-        });
+      switch (formData.tipoUsuario) {
+        case "docente":
+          await registerTeacher({ 
+            name: formData.nombre, 
+            email: formData.email, 
+            password: formData.password, 
+            wants_newsletter: aceptaTerminos, 
+            teacher_code: teacherCode 
+          });
+          break;
+        case "estudiante":
+          if (!formData.carrera) {
+            setError("Debes seleccionar una carrera.");
+            setLoading(false);
+            return;
+          }
+          await registerUser({
+            name: formData.nombre,
+            email: formData.email,
+            password: formData.password,
+            carrera: formData.carrera,
+            wants_newsletter: aceptaTerminos
+          });
+          break;
       }
 
       // Redirigir al login en caso de exito
@@ -100,13 +112,16 @@ export default function RegisterPage() {
         <div className="max-w-md text-white">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm">
-              <GraduationCap className="w-12 h-12 text-white" />
+              <Brain className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-3xl font-bold">Tutor Virtual</h1>
+            <h1 className="text-3xl font-bold">SIPRO UDC</h1>
           </div>
           <h2 className="text-4xl font-bold mb-6">
-            Únete a nuestra plataforma educativa
+            Sistema Integral de Preparación para el Saber Pro
           </h2>
+          <h3 className="text-2xl font-bold mb-3">
+            Únete a nuestra plataforma educativa
+          </h3>
           <p className="text-xl text-emerald-50 mb-8">
             Crea tu cuenta y comienza a mejorar tus habilidades con tecnología de punta.
           </p>
@@ -142,10 +157,10 @@ export default function RegisterPage() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 my-8">
             {/* Logo para móvil */}
             <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-              <div className="p-2 rounded-xl bg-emerald-500">
-                <GraduationCap className="w-8 h-8 text-white" />
+              <div className="p-2 rounded-xl bg-emerald-600">
+                <Brain className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold">Tutor Virtual</h1>
+              <h1 className="text-2xl font-bold">SIPRO</h1>
             </div>
 
             <div className="mb-8">
@@ -244,6 +259,34 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              {/* Carrera (solo estudiante) */}
+              {formData.tipoUsuario === "estudiante" && (
+                <div>
+                  <label htmlFor="carrera" className="block text-sm font-medium mb-2">
+                    Carrera / Programa
+                  </label>
+                  <select
+                    id="carrera"
+                    name="carrera"
+                    value={formData.carrera}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-transparent"
+                  >
+                    <option value="" className="dark:bg-slate-900">Selecciona tu carrera...</option>
+                    <option value="Ingeniería de Sistemas" className="dark:bg-slate-900">Ingeniería de Sistemas</option>
+                    <option value="Ingeniería de Software" className="dark:bg-slate-900">Ingeniería de Software</option>
+                    <option value="Administración de Empresas" className="dark:bg-slate-900">Administración de Empresas</option>
+                    <option value="Contaduría Pública" className="dark:bg-slate-900">Contaduría Pública</option>
+                    <option value="Ingeniería Industrial" className="dark:bg-slate-900">Ingeniería Industrial</option>
+                    <option value="Derecho" className="dark:bg-slate-900">Derecho</option>
+                    <option value="Psicología" className="dark:bg-slate-900">Psicología</option>
+                    <option value="Arquitectura" className="dark:bg-slate-900">Arquitectura</option>
+                    <option value="Medicina Veterinaria y Zootecnia" className="dark:bg-slate-900">Medicina Veterinaria y Zootecnia</option>
+                  </select>
+                </div>
+              )}
+
               {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-2">
@@ -261,7 +304,7 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-transparent"
-                    placeholder="tu@unicartagena.edu.co"
+                    placeholder="tucorreo@iudc.edu.co"
                   />
                 </div>
               </div>
@@ -340,13 +383,14 @@ export default function RegisterPage() {
                   checked={aceptaTerminos}
                   onChange={(e) => setAceptaTerminos(e.target.checked)}
                   className="w-4 h-4 mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 bg-transparent"
+                  required
                 />
                 <label htmlFor="terminos" className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                  Acepto los{" "}
-                  <a href="#" className="font-medium hover:underline text-emerald-600">
+                  He leído y acepto los{" "}
+                  <button type="button" onClick={() => setShowTerms(true)} className="font-medium hover:underline text-emerald-600">
                     Términos y Condiciones
-                  </a>
-                  {" "}y recibir información importante sobre estudios.
+                  </button>
+                  {" "}de SIPRO.
                 </label>
               </div>
 
@@ -373,6 +417,41 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+
+      {/* Dialog for Terms */}
+      <Dialog open={showTerms} onOpenChange={setShowTerms}>
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <ShieldCheck className="h-6 w-6 text-emerald-600" />
+              Términos de Servicio y Políticas de Privacidad
+            </DialogTitle>
+            <DialogDescription>
+              SIPRO UDC
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">1. Aceptación de los Términos</h3>
+            <p>Al acceder y utilizar SIPRO usted acepta estar sujeto a estos términos de servicio y a nuestra política de privacidad. Esta plataforma está diseñada para la preparación exclusiva de competencias.</p>
+            
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">2. Uso de la Plataforma</h3>
+            <p>Las pruebas, estadísticas y chat de la Inteligencia Artificial proporcionados son estrictamente para uso académico. No se permite compartir o comercializar este contenido a terceros bajo ningún motivo.</p>
+          </div>
+          <DialogFooter className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+            <div className="flex justify-between w-full">
+              <Button variant="outline" onClick={() => setShowTerms(false)}>
+                Cerrar
+              </Button>
+              <Button onClick={() => {
+                setAceptaTerminos(true);
+                setShowTerms(false);
+              }} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                Aceptar Términos
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -10,13 +10,8 @@ export function authHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/** POST /auth/register/student */
-export async function registerUser(data: {
-  name: string;
-  email: string;
-  password: string;
-  wants_newsletter: boolean;
-}) {
+/** POST /auth/register */
+export async function registerUser(data: { name: string; email: string; password: string; wants_newsletter: boolean; carrera?: string }) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -108,7 +103,7 @@ export async function getAdminStats() {
     total_estudiantes: number;
     total_docentes: number;
     docentes: { id: number; name: string; email: string; is_active: boolean }[];
-    estudiantes: { id: number; name: string; email: string; is_active: boolean }[];
+    estudiantes: { id: number; name: string; email: string; is_active: boolean; carrera: string | null }[];
   }>;
 }
 
@@ -176,4 +171,18 @@ export async function clearLoginLogs() {
   });
   if (!res.ok) throw new Error("Error limpiando logs");
   return res.json();
+}
+
+/** GET /profesor/stats — professor dashboard statistics */
+export async function getProfesorStats() {
+  const res = await fetch(`${API_BASE}/profesor/stats`, {
+    headers: { ...authHeader() },
+  });
+  if (!res.ok) throw new Error("Failed to fetch profesor stats");
+  return res.json() as Promise<{
+    total_estudiantes: number;
+    total_docentes: number;
+    distribucion_carreras: { carrera: string; cantidad: number }[];
+    estudiantes: { id: number; name: string; email: string; is_active: boolean; carrera: string | null }[];
+  }>;
 }

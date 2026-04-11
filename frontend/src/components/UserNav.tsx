@@ -85,9 +85,9 @@ export function UserNav() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button data-tour="user-nav" className="flex items-center gap-3 hover:opacity-80 outline-none">
-            <div className="text-right hidden sm:block">
+            <div className="text-right">
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.name || "Cargando..."}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role || "Estudiante"}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || (user?.role || "Estudiante")}</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden shadow-sm border border-border">
               {user?.avatar_url ? (

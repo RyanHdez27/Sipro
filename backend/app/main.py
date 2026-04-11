@@ -45,9 +45,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api.routers import auth, users, admin
+from app.api.routers.admin import profesor_router
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(admin.router)
+app.include_router(profesor_router)
 
 
 @app.middleware("http")

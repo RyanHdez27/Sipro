@@ -9,6 +9,7 @@ from app.core.security import get_password_hash
 from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+profesor_router = APIRouter(prefix="/profesor", tags=["profesor"])
 
 
 def require_admin(current_user: User = Depends(get_current_user)):
@@ -33,7 +34,7 @@ def get_admin_stats(db: Session = Depends(get_db), _admin: User = Depends(requir
         "total_estudiantes": len(estudiantes),
         "total_docentes": len(docentes),
         "docentes": [{"id": d.id, "name": d.name, "email": d.email, "is_active": d.is_active} for d in docentes],
-        "estudiantes": [{"id": e.id, "name": e.name, "email": e.email, "is_active": e.is_active} for e in estudiantes],
+        "estudiantes": [{"id": e.id, "name": e.name, "email": e.email, "is_active": e.is_active, "carrera": e.carrera} for e in estudiantes],
     }
 
 
@@ -142,3 +143,27 @@ def clear_login_logs(db: Session = Depends(get_db), _admin: User = Depends(requi
     db.query(LoginLog).delete()
     db.commit()
     return {"msg": "Logs cleared"}
+
+# ─── Profesor Stats ───
+@profesor_router.get("/stats")
+def get_profesor_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Accessible to professors and admins
+    if current_user.role not in [UserRole.profesor, UserRole.admin]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Profesor API access required")
+    estudiantes = db.query(User).filter(User.role == UserRole.estudiante).all()
+    docentes = db.query(User).filter(User.role == UserRole.profesor).all()
+    
+    # Calculate distribucion by carrera
+    carreras = {}
+    for e in estudiantes:
+        c = e.carrera or "Sin asignar"
+        carreras[c] = carreras.get(c, 0) + 1
+        
+    distribucion_carreras = [{"carrera": k, "cantidad": v} for k, v in carreras.items()]
+
+    return {
+        "total_estudiantes": len(estudiantes),
+        "total_docentes": len(docentes),
+        "distribucion_carreras": distribucion_carreras,
+        "estudiantes": [{"id": e.id, "name": e.name, "email": e.email, "is_active": e.is_active, "carrera": e.carrera} for e in estudiantes],
+    }
