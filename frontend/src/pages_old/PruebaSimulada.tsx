@@ -402,7 +402,7 @@ const preguntas = [
     ],
     respuestaCorrecta: "B",
     explicacion:
-    
+      "La cantidad de harina es proporcional al número de personas. Para 4 personas se necesitan 250 gramos, entonces para 10 personas se necesitan (250 gramos / 4 personas) × 10 personas = 625 gramos.",
   },
   // ─ Inglés ─
   {
@@ -597,6 +597,13 @@ export function PruebaSimulada() {
   const pregunta = preguntas[preguntaActual];
   const progreso = ((preguntaActual + 1) / preguntas.length) * 100;
   const respondidas = Object.keys(respuestas).length;
+  const restantes = preguntas.length - respondidas;
+  const consejoRapido =
+    tiempoRestante < 1800
+      ? "Queda poco tiempo: prioriza responder todas y vuelve luego a las más difíciles."
+      : respondidas < preguntas.length / 2
+      ? "Mantén el ritmo y marca una respuesta antes de pasar a la siguiente pregunta."
+      : "Vas bien: revisa con calma las preguntas pendientes y confirma tus respuestas.";
 
   // ─── Finalizar y guardar en localStorage ────────────────────────────────────
   const finalizarPrueba = useCallback(
@@ -782,7 +789,7 @@ export function PruebaSimulada() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-xl">
@@ -812,29 +819,8 @@ export function PruebaSimulada() {
         </div>
       </header>
 
-      {/* Progress Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Pregunta {preguntaActual + 1} de {preguntas.length}
-            </span>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">
-                <CheckCircle2 className="inline w-4 h-4 text-green-500 mr-1" />
-                {respondidas} respondidas
-              </span>
-              <span className="text-sm font-medium text-blue-600">
-                {Math.round(progreso)}% completado
-              </span>
-            </div>
-          </div>
-          <Progress value={progreso} className="h-2" />
-        </div>
-      </div>
-
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Pregunta Principal */}
           <div className="lg:col-span-3">
@@ -920,89 +906,117 @@ export function PruebaSimulada() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Mapa de Preguntas */}
-            <Card className="shadow-lg border-gray-200">
-              <CardContent className="pt-6">
-                <h3 className="font-bold text-gray-900 mb-4">Navegación</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {preguntas.map((p, index) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setPreguntaActual(index)}
-                      className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all ${index === preguntaActual
-                          ? "bg-blue-600 text-white shadow-md scale-110"
-                          : respuestas[p.id]
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
-                    >
-                      {p.numero}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-4 h-4 bg-green-100 border border-green-300 rounded" />
-                    <span className="text-gray-600">Respondida</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded" />
-                    <span className="text-gray-600">Sin responder</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-4 h-4 bg-blue-600 rounded" />
-                    <span className="text-gray-600">Actual</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Progreso rápido */}
-            <Card className="shadow-lg border-blue-200 bg-blue-50">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <p className="text-blue-600 text-sm font-medium mb-1">
-                    Progreso
-                  </p>
-                  <p className="text-3xl font-bold text-blue-700">
-                    {respondidas}{" "}
-                    <span className="text-lg text-blue-400">
-                      / {preguntas.length}
-                    </span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Consejos */}
-            <Card className="shadow-lg border-gray-200">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="space-y-4 self-start lg:sticky lg:top-6">
+            <Card className="border-gray-200 shadow-md">
+              <CardContent className="pt-5">
+                <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
-                    <h4 className="font-semibold text-blue-900 mb-2">
-                      Consejos
-                    </h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• Lee cuidadosamente cada pregunta</li>
-                      <li>• Gestiona bien tu tiempo</li>
-                      <li>• Puedes volver a preguntas anteriores</li>
-                    </ul>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                      Control de prueba
+                    </p>
+                    <p className="mt-1 text-3xl font-bold text-gray-900">
+                      {respondidas}
+                      <span className="ml-1 text-lg font-medium text-gray-400">/ {preguntas.length}</span>
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">{restantes} pendientes</p>
+                  </div>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600">Actual</p>
+                    <p className="text-sm font-bold text-blue-700">{pregunta.numero}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Progreso total</span>
+                    <span className="font-semibold text-gray-700">{Math.round(progreso)}%</span>
+                  </div>
+                  <Progress value={progreso} className="h-2" />
+                </div>
+
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3.5">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Consejo</p>
+                      <p className="mt-1 text-sm leading-5 text-amber-800">{consejoRapido}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2">
+                    <p className="text-base font-bold text-gray-900">{respondidas}</p>
+                    <p className="text-[11px] text-gray-500">Respondidas</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2">
+                    <p className="text-base font-bold text-gray-900">{restantes}</p>
+                    <p className="text-[11px] text-gray-500">Pendientes</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2">
+                    <p className="text-base font-bold text-gray-900">{pregunta.numero}</p>
+                    <p className="text-[11px] text-gray-500">Actual</p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setConfirmFinish(true)}
+                  variant="outline"
+                  className="mt-4 w-full border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <Flag className="w-4 h-4 mr-2" />
+                  Finalizar Prueba
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200 shadow-md">
+              <CardContent className="pt-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="font-bold text-gray-900">Navegación</h3>
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-semibold text-gray-600">
+                    {preguntas.length} preguntas
+                  </span>
+                </div>
+                <p className="mb-3 text-xs text-gray-500">
+                  Salta entre preguntas sin perder tu progreso.
+                </p>
+
+                <div className="max-h-[300px] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-5 gap-2">
+                    {preguntas.map((p, index) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setPreguntaActual(index)}
+                        className={`h-10 rounded-lg text-sm font-semibold transition-all ${index === preguntaActual
+                            ? "border border-blue-600 bg-blue-600 text-white shadow-sm"
+                            : respuestas[p.id]
+                              ? "border border-green-300 bg-green-100 text-green-700 hover:bg-green-200"
+                              : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                          }`}
+                      >
+                        {p.numero}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t pt-3 text-xs text-gray-600">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="h-3 w-3 rounded bg-blue-600" />
+                    Actual
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="h-3 w-3 rounded border border-green-300 bg-green-100" />
+                    Respondida
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded border border-gray-300 bg-white" />
+                    Sin responder
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Finalizar */}
-            <Button
-              onClick={() => setConfirmFinish(true)}
-              variant="outline"
-              className="w-full border-red-300 text-red-600 hover:bg-red-50"
-            >
-              <Flag className="w-4 h-4 mr-2" />
-              Finalizar Prueba
-            </Button>
           </div>
         </div>
       </main>

@@ -6,3 +6,5 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+    role: str | None = None
+    session_id: str | None = None

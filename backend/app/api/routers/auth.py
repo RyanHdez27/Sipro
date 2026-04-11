@@ -2,16 +2,33 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.models.user import User, UserRole, TeacherCode, LoginLog, PasswordResetToken
-from app.schemas.auth import PasswordResetRequest, PasswordResetConfirmRequest
+from app.models.user import (
+    User,
+    UserRole,
+    TeacherCode,
+    LoginLog,
+    PasswordResetToken,
+    UserSecuritySettings,
+    LoginOtpChallenge,
+)
+from app.schemas.auth import (
+    PasswordResetRequest,
+    PasswordResetConfirmRequest,
+    LoginResponse,
+    TwoFactorVerifyRequest,
+    TwoFactorResendRequest,
+)
 from app.schemas.user import UserCreate, TeacherCreate, UserResponse
 from app.schemas.token import Token
 from app.core.config import settings
-from app.core.email import send_password_reset_email
+from app.core.email import send_password_reset_email, send_login_otp_email
 from app.core.security import (
     create_access_token,
+    generate_login_otp_code,
+    generate_login_otp_token,
     generate_password_reset_token,
     get_password_hash,
     get_token_hash,
@@ -19,6 +36,43 @@ from app.core.security import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _get_or_create_user_security_settings(db: Session, user_id: int) -> UserSecuritySettings:
+    settings_row = db.query(UserSecuritySettings).filter(UserSecuritySettings.user_id == user_id).first()
+    if settings_row:
+        return settings_row
+
+    settings_row = UserSecuritySettings(user_id=user_id, two_factor_enabled=False)
+    db.add(settings_row)
+    db.flush()
+    return settings_row
+
+
+def _expire_active_otp_challenges(db: Session, user_id: int, now: datetime) -> None:
+    active_challenges = db.query(LoginOtpChallenge).filter(
+        LoginOtpChallenge.user_id == user_id,
+        LoginOtpChallenge.consumed_at.is_(None),
+    ).all()
+    for challenge in active_challenges:
+        challenge.consumed_at = now
+
+
+def _create_login_otp_challenge(db: Session, user: User, now: datetime) -> tuple[str, int]:
+    _expire_active_otp_challenges(db, user.id, now)
+    otp_code = generate_login_otp_code()
+    otp_token = generate_login_otp_token()
+    expires_minutes = settings.OTP_CODE_EXPIRE_MINUTES
+    expires_at = now + timedelta(minutes=expires_minutes)
+    challenge = LoginOtpChallenge(
+        user_id=user.id,
+        challenge_token_hash=get_token_hash(otp_token),
+        otp_code_hash=get_token_hash(otp_code),
+        expires_at=expires_at,
+    )
+    db.add(challenge)
+    send_login_otp_email(to_email=user.email, otp_code=otp_code, user_name=user.name)
+    return otp_token, expires_minutes * 60
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
