@@ -80,7 +80,7 @@ export default function ConfirmResetPasswordPage() {
             <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm">
               <KeyRound className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-3xl font-bold">Tutor Virtual</h1>
+            <h1 className="text-3xl font-bold">SIPRO UDC</h1>
           </div>
           <h2 className="text-4xl font-bold mb-6">Elige una nueva contrasena</h2>
           <p className="text-xl text-violet-100 mb-8">
@@ -107,7 +107,7 @@ export default function ConfirmResetPasswordPage() {
               <div className="p-2 rounded-xl bg-violet-700">
                 <KeyRound className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold">Tutor Virtual</h1>
+              <h1 className="text-2xl font-bold">SIPRO UDC</h1>
             </div>
 
             <div className="mb-8">

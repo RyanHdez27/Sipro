@@ -22,6 +22,7 @@ class User(Base):
     wants_newsletter = Column(Boolean, default=False)
     phone = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
+    carrera = Column(String, nullable=True)
 
 
 class TeacherCode(Base):

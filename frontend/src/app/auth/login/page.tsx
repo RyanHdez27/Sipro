@@ -7,6 +7,9 @@ export { default } from "./LoginPageOtp";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Brain, Mail, Lock, Eye, EyeOff, GraduationCap, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { loginUser, getCurrentUser } from "@/lib/api";
 import { Brain, Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
 import { getCurrentUser, loginUser, resendTwoFactorLoginCode, verifyTwoFactorLogin } from "@/lib/api";
 
@@ -17,6 +20,7 @@ export function LegacyLoginPage() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [otpToken, setOtpToken] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -72,11 +76,14 @@ export function LegacyLoginPage() {
             <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm">
               <Brain className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-3xl font-bold">Tutor Virtual</h1>
+            <h1 className="text-3xl font-bold">SIPRO UDC</h1>
           </div>
           <h2 className="text-4xl font-bold mb-6">
-            Preparación con IA para Saber Pro
+            Sistema Integral de Preparación para el Saber Pro
           </h2>
+          <h3 className="text-2xl font-bold mb-3">
+            Preparación con IA para Saber Pro
+          </h3>
           <p className="text-xl text-blue-100 mb-8">
             Aprende de forma inteligente con nuestro sistema multiagente que se adapta a tu nivel.
           </p>
@@ -123,7 +130,7 @@ export function LegacyLoginPage() {
               <div className="p-2 rounded-xl bg-blue-700">
                 <Brain className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold">Tutor Virtual</h1>
+              <h1 className="text-2xl font-bold">SIPRO UDC</h1>
             </div>
 
             <div className="mb-8">
@@ -153,7 +160,7 @@ export function LegacyLoginPage() {
                     required
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
-                    placeholder="tu@unicartagena.edu.co"
+                    placeholder="tucorreo@iudc.edu.co"
                   />
                 </div>
               </div>
@@ -232,12 +239,39 @@ export function LegacyLoginPage() {
 
           <p className="text-center text-sm text-gray-500 mt-8">
             Al continuar, aceptas nuestros{" "}
-            <a href="#" className="hover:underline text-blue-600">Términos de Servicio</a>
-            {" "}y{" "}
-            <a href="#" className="hover:underline text-blue-600">Política de Privacidad</a>
+            <button type="button" onClick={() => setShowTerms(true)} className="hover:underline text-blue-600">Términos de Servicio y Política de Privacidad</button>
           </p>
         </div>
       </div>
+
+      <Dialog open={showTerms} onOpenChange={setShowTerms}>
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <ShieldCheck className="h-6 w-6 text-blue-600" />
+              Términos de Servicio y Políticas de Privacidad
+            </DialogTitle>
+            <DialogDescription>
+              Última actualización: Abril de 2026
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">1. Aceptación de los Términos</h3>
+            <p>Al acceder y utilizar SIPRO (Sistema Integral de Preparación para el Saber Pro - UDC), usted acepta estar sujeto a estos términos de servicio y a nuestra política de privacidad. Si no está de acuerdo con alguno de estos términos, tiene prohibido usar o acceder a este sitio.</p>
+            
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">2. Uso de la Plataforma y Tutor IA</h3>
+            <p>Se concede permiso para descargar temporalmente una copia de los materiales de SIPRO solo para visualización transitoria personal y no comercial. Esto es una concesión de licencia, no una transferencia de título.</p>
+            
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">3. Privacidad y Datos de Exámenes</h3>
+            <p>La información recopilada (incluidas sus respuestas de prueba, tiempo y consultas al Tutor de IA) se utilizará exclusivamente con fines de analítica académica y mejora adaptativa de la enseñanza.</p>
+          </div>
+          <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+            <Button onClick={() => setShowTerms(false)} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

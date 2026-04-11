@@ -6,6 +6,7 @@ class UserBase(BaseModel):
     email: EmailStr
     name: str
     wants_newsletter: bool = False
+    carrera: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str

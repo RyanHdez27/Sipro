@@ -5,6 +5,17 @@ Aplicación Full-Stack para el aprendizaje adaptativo con Tutor de IA. Desarroll
 
 ---
 
+## 📚 Documentación del Proyecto
+
+El proyecto cuenta con manuales detallados en la carpeta `docs/`:
+- [Manual Técnico](docs/MANUAL_TECNICO.md) - Arquitectura, BD y API
+- [Manual de Despliegue](docs/MANUAL_DESPLIEGUE.md) - Guía de paso a producción
+- [Manual de Administrador](docs/manual_administrador.md) - Gestión de configuraciones, accesos y métricas de plataforma
+- [Manual de Docente](docs/manual_docente.md) - Control de estudiantes y visualización de resultados
+- [Manual de Estudiante](docs/manual_estudiante.md) - Simulaciones interactivas Saber Pro, métricas y Tutor IA
+
+---
+
 ## 📁 Estructura del Proyecto
 
 ```text
@@ -251,6 +262,9 @@ La plataforma evalúa 6 competencias con 12 preguntas (2 por área):
 | `hashed_password` | String | Contraseña hasheada (bcrypt) |
 | `role` | Enum | `estudiante` / `profesor` / `admin` |
 | `is_active` | Boolean | Estado de la cuenta |
+| `carrera` | String | Programa académico del estudiante |
+| `avatar_url` | String | URL de la foto de perfil |
+| `phone` | String | Teléfono de contacto |
 
 ### `teacher_codes`
 | Campo | Tipo | Descripción |
@@ -293,5 +307,3 @@ La plataforma evalúa 6 competencias con 12 preguntas (2 por área):
 | Admin | `admin@siproudc.com` | `Admin123!` |
 | Profesor | `julioprofe@iudc.com` | `Profesor123!` |
 | Estudiante | `ryanhdez27@iudc.com` | `Estudiante123!` |
-
-## RAMA AGENTES

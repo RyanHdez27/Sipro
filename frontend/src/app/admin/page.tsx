@@ -9,7 +9,7 @@ import { UserNav } from "@/components/UserNav";
 import { getAdminStats } from "@/lib/api";
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, AreaChart, Area
+  Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import {
   Users, GraduationCap, TrendingUp, Shield, Award, BarChart3,
@@ -17,7 +17,13 @@ import {
 } from "lucide-react";
 
 /* ─── TYPES ─── */
-interface BackendUser { id: number; name: string; email: string; is_active: boolean }
+interface BackendUser {
+  id: number;
+  name: string;
+  email: string;
+  is_active: boolean;
+  carrera?: string | null;
+}
 
 /* ─── SIMULATED STUDENT PERFORMANCE DATA (6 áreas Saber Pro) ─── */
 const AREAS_SABER_PRO = [
@@ -101,19 +107,27 @@ export default function AdminPage() {
   }, [estudiantesConNotas]);
 
   /* Chart data */
-  const crecimientoData = useMemo(() => {
-    const actual = { mes: "Mar", estudiantes: totalEstudiantes, docentes: totalDocentes };
-    return [...crecimientoBase, actual];
-  }, [totalEstudiantes, totalDocentes]);
-
-  const distribucionData = useMemo(() => {
-    const activos = Math.max(0, totalEstudiantes - 3);
+  const plataformaData = useMemo(() => {
+    const estudiantesActivos = estudiantesBackend.filter(e => e.is_active).length;
+    const docentesActivos = docentesLista.filter(d => d.is_active).length;
     return [
-      { nombre: "Activos", value: activos },
-      { nombre: "Inactivos", value: Math.min(2, totalEstudiantes) },
-      { nombre: "Nuevos", value: Math.min(1, totalEstudiantes) },
+      { name: "Estudiantes Activos", Cantidad: estudiantesActivos },
+      { name: "Docentes Activos", Cantidad: docentesActivos }
     ];
-  }, [totalEstudiantes]);
+  }, [estudiantesBackend, docentesLista]);
+
+  const distribucionCarreraData = useMemo(() => {
+    if (estudiantesBackend.length === 0) return [];
+    
+    // Contar por carrera real
+    const conteo: Record<string, number> = {};
+    estudiantesBackend.forEach(e => {
+        const c = e.carrera || "Sin asignar";
+        conteo[c] = (conteo[c] || 0) + 1;
+    });
+    
+    return Object.entries(conteo).map(([nombre, value]) => ({ nombre, value }));
+  }, [estudiantesBackend]);
 
   const rendimientoPorArea = useMemo(() => {
     if (estudiantesConNotas.length === 0) return AREAS_SABER_PRO.map(a => ({ area: a, promedio: 0, estudiantes: 0 }));
@@ -238,34 +252,34 @@ export default function AdminPage() {
             {/* Charts */}
             <div data-tour="admin-charts" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <Card className="border-0 shadow-sm dark:bg-slate-900">
-                <CardHeader><CardTitle className="text-lg">Crecimiento de la Plataforma</CardTitle><CardDescription>Usuarios registrados por mes</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="text-lg">Estado de la Plataforma</CardTitle><CardDescription>Usuarios activos e inactivos por rol</CardDescription></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={crecimientoData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.3} />
-                      <XAxis dataKey="mes" stroke="#6B7280" /><YAxis stroke="#6B7280" />
+                    <BarChart data={plataformaData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" opacity={0.3} />
+                      <XAxis type="number" stroke="#6B7280" />
+                      <YAxis dataKey="name" type="category" stroke="#6B7280" width={120} />
                       <Tooltip contentStyle={{ backgroundColor: "#FFF", borderColor: "#E5E7EB", borderRadius: "8px", color: "#000" }} />
-                      <Legend />
-                      <Area type="monotone" dataKey="estudiantes" stackId="1" stroke="#1D4ED8" fill="#1D4ED8" fillOpacity={0.6} />
-                      <Area type="monotone" dataKey="docentes" stackId="2" stroke="#10B981" fill="#10B981" fillOpacity={0.6} />
-                    </AreaChart>
+                      <Bar dataKey="Cantidad" fill="#10B981" radius={[0, 4, 4, 0]} barSize={40} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-sm dark:bg-slate-900">
-                <CardHeader><CardTitle className="text-lg">Distribución de Estudiantes</CardTitle><CardDescription>Por estado actual</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="text-lg">Distribución por Carrera</CardTitle><CardDescription>Estudiantes por programa académico</CardDescription></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie data={distribucionData} cx="50%" cy="50%" labelLine={false}
-                        label={({ nombre, percent }) => `${nombre} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100} fill="#8884d8" dataKey="value">
-                        {distribucionData.map((entry, index) => (
-                          <Cell key={`cell-${entry.nombre}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
+                      <Pie data={distribucionCarreraData} cx="50%" cy="50%" labelLine={false}
+                        label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        outerRadius={100} fill="#8884d8" dataKey="value" nameKey="nombre">
+                        {distribucionCarreraData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={{ backgroundColor: "#FFF", borderColor: "#E5E7EB", borderRadius: "8px", color: "#000" }} />
+                      <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
