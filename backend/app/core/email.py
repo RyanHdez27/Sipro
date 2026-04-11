@@ -134,3 +134,107 @@ def send_password_reset_email(to_email: str, reset_url: str, user_name: str | No
         print(f"[password-reset] No se pudo enviar el correo a {to_email}: {exc}")
         print(f"[password-reset] Enlace de respaldo: {reset_url}")
         return False
+
+
+def send_login_otp_email(to_email: str, otp_code: str, user_name: str | None = None) -> bool:
+    greeting = user_name or "usuario"
+    expires_in = settings.OTP_CODE_EXPIRE_MINUTES
+    subject = "Codigo de verificacion para iniciar sesion en SIPRO UDC"
+    generated_at = settings.FRONTEND_URL.rstrip("/")
+    text_body = (
+        f"Hola {greeting},\n\n"
+        "Recibimos un intento de inicio de sesion en tu cuenta de SIPRO UDC.\n"
+        "Usa este codigo OTP para continuar:\n\n"
+        f"{otp_code}\n\n"
+        f"Este codigo vence en {expires_in} minutos.\n"
+        "Solo puede usarse una vez.\n"
+        "Si no fuiste tu, cambia tu contrasena inmediatamente.\n"
+        f"Puedes ingresar desde: {generated_at}\n\n"
+        "Equipo SIPRO UDC"
+    )
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codigo OTP</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9;padding:36px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 16px 42px rgba(15,23,42,0.12);">
+            <tr>
+              <td style="background:linear-gradient(135deg,#2563eb 0%,#1e40af 100%);padding:30px 36px;text-align:center;">
+                <div style="display:inline-block;background:rgba(255,255,255,0.18);color:#ffffff;padding:7px 14px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
+                  Seguridad de cuenta
+                </div>
+                <h1 style="margin:16px 0 8px;color:#ffffff;font-size:30px;line-height:1.2;">Codigo OTP de acceso</h1>
+                <p style="margin:0;color:#dbeafe;font-size:15px;line-height:1.6;">
+                  Usa este codigo para finalizar tu inicio de sesion en SIPRO UDC.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:34px 36px 30px;">
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.6;text-align:center;">
+                  Hola <strong>{escape(greeting)}</strong>,
+                </p>
+                <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#475569;text-align:center;">
+                  Detectamos un intento de inicio de sesion. Ingresa este codigo OTP para continuar.
+                </p>
+                <div style="margin:0 auto 16px;display:block;width:max-content;padding:13px 24px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;font-size:32px;letter-spacing:8px;font-weight:800;color:#1d4ed8;text-align:center;">
+                  {escape(otp_code)}
+                </div>
+                <div style="margin:0 auto 20px;max-width:460px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;">
+                  <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#0f172a;text-align:center;">Informacion importante</p>
+                  <p style="margin:0;font-size:13px;line-height:1.7;color:#475569;text-align:center;">
+                    El codigo es de un solo uso y vence en <strong>{expires_in} minutos</strong>. Si no fuiste tu, cambia tu contrasena de inmediato.
+                  </p>
+                </div>
+                <p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:#64748b;text-align:center;">
+                  Plataforma: <a href="{generated_at}" style="color:#1d4ed8;text-decoration:none;">{generated_at}</a>
+                </p>
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">
+                  Equipo SIPRO UDC
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+"""
+
+    if not settings.SMTP_HOST:
+        print(f"[2fa-otp] SMTP no configurado. Codigo OTP para {to_email}: {otp_code}")
+        return False
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
+    message["To"] = to_email
+    message.set_content(text_body)
+    message.add_alternative(html_body, subtype="html")
+
+    try:
+        if settings.SMTP_USE_SSL:
+            with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+                if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
+                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                server.send_message(message)
+        else:
+            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+                if settings.SMTP_USE_TLS:
+                    server.starttls()
+                if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
+                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                server.send_message(message)
+        return True
+    except Exception as exc:
+        print(f"[2fa-otp] No se pudo enviar el codigo OTP a {to_email}: {exc}")
+        print(f"[2fa-otp] Codigo OTP de respaldo: {otp_code}")
+        return False

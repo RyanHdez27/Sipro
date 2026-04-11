@@ -21,6 +21,14 @@ def generate_password_reset_token() -> str:
 def get_token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
+
+def generate_login_otp_code() -> str:
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def generate_login_otp_token() -> str:
+    return secrets.token_urlsafe(32)
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:

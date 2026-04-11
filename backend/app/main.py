@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routers import auth, users, admin
+from app.api.routers import auth_v2 as auth, users, admin, user_security, user_sessions
 from app.core.config import settings
 from app.db.database import engine, Base
 
@@ -47,24 +47,41 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(user_security.router)
+app.include_router(user_sessions.router)
 app.include_router(admin.router)
 
 
 @app.middleware("http")
 async def request_contract_middleware(request: Request, call_next):
     # Estas validaciones centralizan los contratos HTTP obligatorios que aplican a los endpoints actuales del MVP.
-    limited_key = f"{request.client.host if request.client else 'local'}:{request.url.path}"
-    now = time.time()
-    window_start = now - settings.RATE_LIMIT_WINDOW_SECONDS
-    RATE_LIMIT_BUCKETS[limited_key] = [
-        timestamp for timestamp in RATE_LIMIT_BUCKETS[limited_key] if timestamp > window_start
-    ]
-    if len(RATE_LIMIT_BUCKETS[limited_key]) >= settings.RATE_LIMIT_REQUESTS:
-        return build_error_response(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            "Rate limit exceeded",
+    route_key = (request.url.path, request.method.upper())
+    rate_limited_routes = {
+        ("/auth/login", "POST"),
+        ("/auth/login/2fa/verify", "POST"),
+        ("/auth/login/2fa/resend", "POST"),
+        ("/auth/register", "POST"),
+        ("/auth/register/teacher", "POST"),
+        ("/auth/reset-password", "POST"),
+        ("/auth/reset-password/confirm", "POST"),
+    }
+
+    if request.method.upper() != "OPTIONS" and route_key in rate_limited_routes:
+        limited_key = (
+            f"{request.client.host if request.client else 'local'}:"
+            f"{request.method.upper()}:{request.url.path}"
         )
-    RATE_LIMIT_BUCKETS[limited_key].append(now)
+        now = time.time()
+        window_start = now - settings.RATE_LIMIT_WINDOW_SECONDS
+        RATE_LIMIT_BUCKETS[limited_key] = [
+            timestamp for timestamp in RATE_LIMIT_BUCKETS[limited_key] if timestamp > window_start
+        ]
+        if len(RATE_LIMIT_BUCKETS[limited_key]) >= settings.RATE_LIMIT_REQUESTS:
+            return build_error_response(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                "Rate limit exceeded",
+            )
+        RATE_LIMIT_BUCKETS[limited_key].append(now)
 
     content_length = request.headers.get("content-length")
     if content_length:
@@ -83,10 +100,13 @@ async def request_contract_middleware(request: Request, call_next):
         ("/auth/register/teacher", "POST"),
         ("/auth/reset-password", "POST"),
         ("/auth/reset-password/confirm", "POST"),
+        ("/auth/login/2fa/verify", "POST"),
+        ("/auth/login/2fa/resend", "POST"),
         ("/users/me", "PUT"),
+        ("/users/me/profile", "PUT"),
+        ("/users/me/security", "PUT"),
     }
     login_routes = {("/auth/login", "POST")}
-    route_key = (request.url.path, request.method.upper())
     content_type = request.headers.get("content-type", "").split(";")[0]
 
     if route_key in json_routes and content_type != "application/json":
