@@ -20,7 +20,7 @@ import {
 import {
   User, Lock, Shield, Save, Camera, Home, TrendingUp,
   CheckCircle2, AlertCircle, Trophy, Flame, Clock, BarChart3,
-  Calendar, Activity, Star
+  Calendar, Activity, Star, Globe
 } from "lucide-react";
 
 const evolucionPuntajes = [
@@ -49,7 +49,11 @@ function ConfiguracionEstudiante() {
   const [carrera, setCarrera] = useState("Ingeniería de Sistemas");
   const [universidad, setUniversidad] = useState("IUDC");
   const [semestre, setSemestre] = useState("8");
+  const puntajeActual = 270;
   const progresoGeneral = 75;
+  const [objetivoPuntaje, setObjetivoPuntaje] = useState("300");
+  const [frecuenciaPractica, setFrecuenciaPractica] = useState("semanal");
+  const [dificultadPreferida, setDificultadPreferida] = useState("intermedio");
   const [passwordActual, setPasswordActual] = useState("");
   const [passwordNueva, setPasswordNueva] = useState("");
   const [passwordConfirmar, setPasswordConfirmar] = useState("");
@@ -61,6 +65,13 @@ function ConfiguracionEstudiante() {
     { nombre: "Top 10%", descripcion: "Entre los mejores estudiantes", Icon: Trophy, color: "#7C3AED", desbloqueado: false },
     { nombre: "Experto", descripcion: "100 simulacros completados", Icon: Star, color: "#1D4ED8", desbloqueado: false },
   ];
+
+  const areaDebil = rendimientoPorArea.find((area) => area.puntaje < area.promedio);
+  const recomendacion = areaDebil
+    ? { texto: `Refuerza ${areaDebil.area} - bajo rendimiento detectado`, color: "#F97316", Icon: AlertCircle }
+    : { texto: "Excelente trabajo. Mantén el ritmo en todas las áreas", color: "#10B981", Icon: CheckCircle2 };
+  const progresoObjetivo = Math.min(100, Math.round((puntajeActual / Number(objetivoPuntaje)) * 100));
+  const puntosRestantes = Math.max(0, Number(objetivoPuntaje) - puntajeActual);
 
   const handleCambiarPassword = () => {
     if (passwordNueva !== passwordConfirmar || passwordNueva.length < 6) return;
@@ -162,6 +173,116 @@ function ConfiguracionEstudiante() {
                       <p className="text-xs text-gray-500">{descripcion}</p>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-tour="config-motivation" className="border-0 shadow-sm dark:bg-slate-900">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-blue-700" />Objetivos y Recomendaciones</CardTitle>
+                <CardDescription>Ajusta tu meta y revisa en qué enfocarte en tu próxima práctica</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                  <div className="space-y-4 rounded-xl border border-blue-100 bg-blue-50/70 p-5 dark:border-blue-900/60 dark:bg-blue-950/20">
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Objetivo de puntaje</Label>
+                        <Select value={objetivoPuntaje} onValueChange={setObjetivoPuntaje}>
+                          <SelectTrigger className="dark:bg-slate-800 dark:border-gray-700"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="250">250 puntos</SelectItem>
+                            <SelectItem value="275">275 puntos</SelectItem>
+                            <SelectItem value="300">300 puntos</SelectItem>
+                            <SelectItem value="325">325 puntos</SelectItem>
+                            <SelectItem value="350">350+ puntos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">Puntaje actual:</span>
+                          <span className="font-bold text-emerald-600">{puntajeActual} puntos</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-slate-700 dark:text-slate-200">Progreso hacia la meta</span>
+                          <span className="font-semibold text-blue-700 dark:text-blue-300">{progresoObjetivo}%</span>
+                        </div>
+                        <Progress value={progresoObjetivo} className="h-3" />
+                        <p className="text-sm text-gray-500">
+                          {puntosRestantes > 0
+                            ? `Te faltan ${puntosRestantes} puntos para alcanzar tu objetivo actual.`
+                            : "Ya alcanzaste tu objetivo actual. Puedes subir la meta para seguir avanzando."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator className="dark:border-gray-800" />
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Frecuencia de práctica</Label>
+                        <Select value={frecuenciaPractica} onValueChange={setFrecuenciaPractica}>
+                          <SelectTrigger className="dark:bg-slate-800 dark:border-gray-700"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diaria">Diaria</SelectItem>
+                            <SelectItem value="semanal">Semanal</SelectItem>
+                            <SelectItem value="quincenal">Quincenal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Dificultad preferida</Label>
+                        <Select value={dificultadPreferida} onValueChange={setDificultadPreferida}>
+                          <SelectTrigger className="dark:bg-slate-800 dark:border-gray-700"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basico">Básico</SelectItem>
+                            <SelectItem value="intermedio">Intermedio</SelectItem>
+                            <SelectItem value="avanzado">Avanzado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div
+                      className="rounded-xl border p-5 dark:bg-slate-800/40"
+                      style={{ borderColor: `${recomendacion.color}50`, backgroundColor: `${recomendacion.color}12` }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full p-2" style={{ backgroundColor: recomendacion.color }}>
+                          <recomendacion.Icon className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold" style={{ color: recomendacion.color }}>Recomendación principal</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-200">{recomendacion.texto}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                          <Clock className="h-4 w-4 text-blue-700" />
+                          Ritmo sugerido
+                        </div>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Mantén una práctica {frecuenciaPractica} y prioriza simulacros de nivel {dificultadPreferida}.
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                          <Globe className="h-4 w-4 text-emerald-500" />
+                          Contexto académico
+                        </div>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Perfil configurado para {carrera} en {universidad}, semestre {semestre}.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
