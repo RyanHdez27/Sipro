@@ -237,7 +237,7 @@ export default function LoginPageOtp() {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium mb-2">
-                    Contrasena
+                    Contraseña
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -264,6 +264,23 @@ export default function LoginPageOtp() {
                       )}
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-transparent"
+                    />
+                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">Recordarme</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/auth/reset-password")}
+                    className="text-sm font-medium hover:underline text-blue-600"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
                 </div>
 
                 <Button
@@ -341,6 +358,7 @@ export default function LoginPageOtp() {
                     Registrate aqui
                   </button>
                 </p>
+                
               </div>
             )}
           </div>
